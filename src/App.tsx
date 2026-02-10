@@ -17,8 +17,6 @@ import NodeManagement from './pages/NodeManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
 import SchoolAssignment from './pages/SchoolAssignment';
 import ProtectedRoute from './components/ProtectedRoute';
-import { databaseService } from './services/DatabaseService';
-import { authService } from './services/AuthService';
 
 function App() {
   const [healthStatus, setHealthStatus] = useState<'checking' | 'healthy' | 'unhealthy'>('checking');
