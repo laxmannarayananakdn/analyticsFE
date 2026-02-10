@@ -81,6 +81,13 @@ class AuthService {
   }
 
   /**
+   * Get current user profile (email, displayName)
+   */
+  async getCurrentUser(): Promise<{ email: string; displayName: string | null }> {
+    return apiClient.get<{ email: string; displayName: string | null }>('/api/users/me');
+  }
+
+  /**
    * Login with email and password
    */
   async login(email: string, password: string): Promise<LoginResponse> {

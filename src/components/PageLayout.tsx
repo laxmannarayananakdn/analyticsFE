@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -7,6 +7,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -21,6 +22,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import WorkIcon from '@mui/icons-material/Work';
 import SchoolIcon from '@mui/icons-material/School';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
 import ThemeSwitcher from './ThemeSwitcher';
 import { authService } from '../services/AuthService';
 
@@ -48,9 +50,14 @@ const navItems: { to: string; label: string; icon: React.ReactNode }[] = [
 
 export default function PageLayout({ children }: PageLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState<{ email: string; displayName: string | null } | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const drawerWidth = collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH;
+
+  useEffect(() => {
+    authService.getCurrentUser().then(setUser).catch(() => setUser(null));
+  }, []);
 
   const handleLogout = async () => {
     await authService.logout();
@@ -128,6 +135,28 @@ export default function PageLayout({ children }: PageLayoutProps) {
           })}
         </List>
         <Divider />
+        {!collapsed && user && (
+          <Box
+            sx={{
+              px: 2,
+              py: 2,
+              borderBottom: 1,
+              borderColor: 'divider',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+              <PersonIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography variant="subtitle2" fontWeight={600} noWrap>
+                  {user.displayName || 'User'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap display="block">
+                  {user.email}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        )}
         <List sx={{ py: 1, px: 1 }}>
           <ListItem disablePadding>
             <ListItemButton onClick={handleLogout} sx={{ borderRadius: 1 }} aria-label="Logout">
