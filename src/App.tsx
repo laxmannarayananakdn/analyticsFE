@@ -11,6 +11,7 @@ import RPConfig from './pages/RPConfig';
 import SupersetDashboards from './pages/SupersetDashboards';
 import AKSDashboard from './pages/AKSDashboard';
 import Login from './pages/Login';
+import ChangePassword from './pages/ChangePassword';
 import UserManagement from './pages/UserManagement';
 import AccessControl from './pages/AccessControl';
 import NodeManagement from './pages/NodeManagement';
@@ -63,9 +64,10 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public route - login page */}
+        {/* Public routes */}
         <Route path="/login" element={<Login />} />
-        
+        <Route path="/change-password" element={<ChangePassword />} />
+
         {/* Protected routes - require authentication */}
         <Route
           path="/"

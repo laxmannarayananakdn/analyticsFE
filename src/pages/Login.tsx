@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/AuthService';
 
 export default function Login() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const message = (location.state as { message?: string })?.message;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -39,7 +41,12 @@ export default function Login() {
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md">
         <h1 className="text-3xl font-bold text-white mb-6 text-center">Login</h1>
-        
+
+        {message && (
+          <div className="mb-4 p-3 bg-green-900/50 border border-green-700 rounded text-green-200 text-sm">
+            {message}
+          </div>
+        )}
         {error && (
           <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-200 text-sm">
             {error}

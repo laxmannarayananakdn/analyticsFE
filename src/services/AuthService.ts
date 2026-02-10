@@ -110,10 +110,21 @@ class AuthService {
   }
 
   /**
-   * Change password
+   * Change password (when already logged in)
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     await apiClient.post('/api/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
+  }
+
+  /**
+   * Set password on first login (no auth; for users with temporary password)
+   */
+  async setPassword(email: string, currentPassword: string, newPassword: string): Promise<void> {
+    await apiClient.post('/api/auth/set-password', {
+      email,
       currentPassword,
       newPassword,
     });
