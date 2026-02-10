@@ -24,10 +24,11 @@ function App() {
   const [healthStatus, setHealthStatus] = useState<'checking' | 'healthy' | 'unhealthy'>('checking');
 
   useEffect(() => {
-    // Check API health on mount
+    // Check API health on mount (uses same base URL as rest of app)
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
     const checkHealth = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/health');
+        const response = await fetch(`${apiBase}/api/health`);
         const data = await response.json();
         if (data.status === 'ok' && data.database === 'connected') {
           setHealthStatus('healthy');
@@ -55,7 +56,7 @@ function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-red-500 text-xl">
-          ⚠️ Cannot connect to API server. Please ensure the backend is running on port 3001.
+          ⚠️ Cannot connect to API server. Please ensure the backend is running and VITE_API_BASE_URL is set correctly.
         </div>
       </div>
     );
