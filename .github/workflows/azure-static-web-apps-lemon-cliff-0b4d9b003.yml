@@ -1,46 +1,100 @@
-name: Azure Static Web Apps CI/CD
+# Deploy frontend to Azure Static Web Apps.
+# Assumes frontend is at REPO ROOT (e.g. analyticsFE repo). If your app is in a "frontend/" subfolder, set FRONTEND_DIR to "frontend".
+#
+# REQUIRED: Add the deployment token as a GitHub Actions secret:
+#   1. Azure Portal → your Static Web App → Overview → "Manage deployment token" → Copy (no spaces)
+#   2. GitHub repo (analyticsFE) → Settings → Secrets and variables → Actions → New repository secret
+#   3. Name: AZURE_STATIC_WEB_APPS_API_TOKEN   Value: (paste the token)
+#
+# If you see "No matching Static Web App was found or the api key was invalid":
+#   *** MOST COMMON FIX *** The Static Web App must use "Deployment token" as deployment authorization:
+#   - Azure Portal → your Static Web App → Settings → Configuration (or Deployment Center).
+#   - Under "Deployment" / "Deployment configurations", set "Deployment authorization" to "Deployment token"
+#     (not "GitHub" or linked repo). This is often only set at creation; if greyed out, try disconnecting
+#     the GitHub link then set to Deployment token, or create a new Static Web App with "Deployment token" selected.
+#   - See: https://github.com/Azure/static-web-apps/issues/1576 (comment by adem-altan)
+#   - Then: Overview → Manage deployment token → Copy (or Reset → Copy) → put in GitHub secret AZURE_STATIC_WEB_APPS_API_TOKEN.
+#   - See: https://learn.microsoft.com/en-us/azure/static-web-apps/deployment-token-management
+
+name: Azure Static Web Apps - Frontend
 
 on:
   push:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize, reopened, closed]
     branches:
       - main
 
-jobs:
-  build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    runs-on: ubuntu-latest
-    name: Build and Deploy Job
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-          lfs: false
-      - name: Build And Deploy
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_CLIFF_0B4D9B003 }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
-          action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "build" # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
+env:
+  # Set to "frontend" if this repo has frontend in a subfolder (e.g. dataanalytics); leave empty if app is at root (e.g. analyticsFE)
+  FRONTEND_DIR: ''
 
-  close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+jobs:
+  build_and_deploy:
     runs-on: ubuntu-latest
-    name: Close Pull Request Job
     steps:
-      - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_CLIFF_0B4D9B003 }}
-          action: "close"
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.FRONTEND_DIR || '.' }}
+
+      - name: Build
+        run: npx vite build
+        working-directory: ${{ env.FRONTEND_DIR || '.' }}
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://analyticsbe-bdcvd6gsenb8h0hg.westeurope-01.azurewebsites.net' }}
+          VITE_SUPERSET_URL: ${{ vars.VITE_SUPERSET_URL || '' }}
+
+      - name: Add staticwebapp.config.json (fix JS/CSS MIME type on Azure)
+        run: |
+          OUTPUT_DIR="${{ env.FRONTEND_DIR && format('{0}/dist', env.FRONTEND_DIR) || 'dist' }}"
+          echo '{
+            "mimeTypes": {
+              ".js": "application/javascript",
+              ".mjs": "application/javascript",
+              ".css": "text/css",
+              ".json": "application/json",
+              ".html": "text/html",
+              ".ico": "image/x-icon",
+              ".png": "image/png",
+              ".svg": "image/svg+xml",
+              ".woff": "font/woff",
+              ".woff2": "font/woff2"
+            },
+            "routes": [
+              {"route": "/assets/*.js", "headers": {"Content-Type": "application/javascript"}},
+              {"route": "/assets/*.mjs", "headers": {"Content-Type": "application/javascript"}},
+              {"route": "/assets/*.css", "headers": {"Content-Type": "text/css"}}
+            ],
+            "navigationFallback": {
+              "rewrite": "/index.html",
+              "exclude": ["/assets/*", "/*.js", "/*.mjs", "/*.css", "/*.ico", "/*.png", "/*.svg", "/*.woff", "/*.woff2"]
+            }
+          }' > "$OUTPUT_DIR/staticwebapp.config.json"
+          echo "Wrote staticwebapp.config.json to $OUTPUT_DIR"
+          cat "$OUTPUT_DIR/staticwebapp.config.json"
+
+      - name: Check deployment token is set
+        run: |
+          if [ -z "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" ]; then
+            echo "::error::AZURE_STATIC_WEB_APPS_API_TOKEN secret is not set. Add it in repo Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "Deployment token secret is set (length hidden)."
+
+      - name: Deploy to Azure Static Web Apps
+        uses: azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: 'upload'
+          # Deploy the build output folder (dist). Path is relative to repo root.
+          app_location: ${{ env.FRONTEND_DIR && format('{0}/dist', env.FRONTEND_DIR) || 'dist' }}
+          skip_app_build: true
