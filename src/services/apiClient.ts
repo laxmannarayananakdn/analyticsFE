@@ -4,7 +4,6 @@
  */
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { API_ENDPOINTS } from '../config/api';
 
 class ApiClient {
   private client: AxiosInstance;

@@ -1,10 +1,20 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
 import { authService } from '../services/AuthService';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const PASSWORD_RULES = 'At least 8 characters, with uppercase, lowercase, number, and special character.';
 
 export default function ChangePassword() {
+  const { showToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const stateEmail = (location.state as { email?: string })?.email ?? '';
@@ -32,6 +42,7 @@ export default function ChangePassword() {
     setLoading(true);
     try {
       await authService.setPassword(email.trim(), currentPassword, newPassword);
+      showToast('Password updated successfully.', 'success');
       setSuccess(true);
       setTimeout(() => navigate('/login', { state: { message: 'Password updated. Please log in.' } }), 2000);
     } catch (err: any) {
@@ -43,95 +54,110 @@ export default function ChangePassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md text-center">
-          <p className="text-green-400 font-medium">Password updated successfully.</p>
-          <p className="text-gray-400 text-sm mt-2">Redirecting to login...</p>
-        </div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+          p: 2,
+        }}
+      >
+        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+          <ThemeSwitcher />
+        </Box>
+        <Card sx={{ maxWidth: 400, width: '100%', textAlign: 'center' }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              Redirecting to login...
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-white mb-2">Set your password</h1>
-        <p className="text-gray-400 text-sm mb-6">
-          {requireChange
-            ? 'You must set a new password before you can continue.'
-            : 'Enter your temporary password and choose a new password.'}
-        </p>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        p: 2,
+      }}
+    >
+      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+        <ThemeSwitcher />
+      </Box>
+      <Card sx={{ maxWidth: 400, width: '100%' }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h5" component="h1" gutterBottom>
+            Set your password
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {requireChange
+              ? 'You must set a new password before you can continue.'
+              : 'Enter your temporary password and choose a new password.'}
+          </Typography>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-200 text-sm">
-            {error}
-          </div>
-        )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-300 text-sm font-medium mb-2">Email</label>
-            <input
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              fullWidth
               placeholder="user@example.com"
             />
-          </div>
-          <div>
-            <label className="block text-gray-300 text-sm font-medium mb-2">Current (temporary) password</label>
-            <input
+            <TextField
+              label="Current (temporary) password"
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              fullWidth
               placeholder="Enter the password you were given"
             />
-          </div>
-          <div>
-            <label className="block text-gray-300 text-sm font-medium mb-2">New password</label>
-            <input
+            <TextField
+              label="New password"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              fullWidth
               placeholder="Choose a new password"
+              helperText={PASSWORD_RULES}
             />
-            <p className="mt-1 text-gray-500 text-xs">{PASSWORD_RULES}</p>
-          </div>
-          <div>
-            <label className="block text-gray-300 text-sm font-medium mb-2">Confirm new password</label>
-            <input
+            <TextField
+              label="Confirm new password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              fullWidth
               placeholder="Confirm new password"
             />
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => navigate('/login')}
-              className="flex-1 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
-            >
-              Back to login
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Updating...' : 'Set password'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            <Box sx={{ display: 'flex', gap: 1, pt: 1 }}>
+              <Button variant="outlined" fullWidth onClick={() => navigate('/login')}>
+                Back to login
+              </Button>
+              <Button type="submit" variant="contained" fullWidth disabled={loading}>
+                {loading ? 'Updating...' : 'Set password'}
+              </Button>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

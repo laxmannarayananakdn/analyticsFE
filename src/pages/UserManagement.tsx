@@ -1,10 +1,35 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '../context/ToastContext';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import IconButton from '@mui/material/IconButton';
+import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
+import AddIcon from '@mui/icons-material/Add';
+import KeyIcon from '@mui/icons-material/Key';
+import CloseIcon from '@mui/icons-material/Close';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CheckIcon from '@mui/icons-material/Check';
 import { authService, User } from '../services/AuthService';
-import { Plus, Key, X, Copy, Check } from 'lucide-react';
 
 const PASSWORD_RULES = 'At least 8 characters, with uppercase, lowercase, number, and special character.';
 
 export default function UserManagement() {
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,9 +43,7 @@ export default function UserManagement() {
   const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  useEffect(() => { loadUsers(); }, []);
 
   const loadUsers = async () => {
     try {
@@ -35,16 +58,13 @@ export default function UserManagement() {
   };
 
   const handleResetPassword = async (email: string) => {
-    if (!confirm(`Reset password for ${email}? A temporary password will be generated.`)) {
-      return;
-    }
-
+    if (!confirm(`Reset password for ${email}? A temporary password will be generated.`)) return;
     try {
       const result = await authService.resetPassword(email);
-      alert(`Password reset successful!\nTemporary password: ${result.temporaryPassword}\n\nPlease communicate this to the user.`);
+      showToast(`Password reset successful! Temporary password: ${result.temporaryPassword} — please communicate this to the user.`, 'success', 12000);
       loadUsers();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to reset password');
+      showToast(err.response?.data?.error || 'Failed to reset password', 'error');
     }
   };
 
@@ -101,202 +121,107 @@ export default function UserManagement() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 p-8">
-        <div className="text-white text-center">Loading users...</div>
-      </div>
+      <Box sx={{ minHeight: '100vh', p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography>Loading users...</Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">User Management</h1>
-            <p className="text-gray-400">Manage users and their access</p>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
+    <Box sx={{ minHeight: '100vh', p: 3, bgcolor: 'background.default' }}>
+      <Box sx={{ maxWidth: 1280, mx: 'auto' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+          <Box>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>User Management</Typography>
+            <Typography color="text.secondary">Manage users and their access</Typography>
+          </Box>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setShowCreateModal(true)}>
             Create User
-          </button>
-        </div>
+          </Button>
+        </Box>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-900/50 border border-red-700 rounded text-red-200">
-            {error}
-          </div>
+          <Box sx={{ mb: 2, p: 2, bgcolor: 'error.dark', color: 'white', borderRadius: 1 }}>{error}</Box>
         )}
 
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-xl shadow-xl w-full max-w-md border border-gray-700">
-              <div className="flex items-center justify-between p-4 border-b border-gray-700">
-                <h2 className="text-xl font-semibold text-white">
-                  {createdTempPassword ? 'User created – save this password' : 'Create user'}
-                </h2>
-                <button
-                  type="button"
-                  onClick={resetCreateModal}
-                  className="p-2 text-gray-400 hover:text-white rounded"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {createdTempPassword ? (
-                <div className="p-6 space-y-4">
-                  <p className="text-gray-300 text-sm">
-                    Share this temporary password with the user. They will be required to change it on first login.
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 px-3 py-2 bg-gray-900 text-green-400 rounded font-mono text-sm break-all">
-                      {createdTempPassword}
-                    </code>
-                    <button
-                      type="button"
-                      onClick={handleCopyTempPassword}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shrink-0"
-                    >
-                      {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      {copied ? 'Copied' : 'Copy'}
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleDoneWithTempPassword}
-                    className="w-full py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
-                  >
-                    Done
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleCreateUser} className="p-6 space-y-4">
-                  {createError && (
-                    <div className="p-3 bg-red-900/50 border border-red-700 rounded text-red-200 text-sm">
-                      {createError}
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-1">Email *</label>
-                    <input
-                      type="email"
-                      value={createEmail}
-                      onChange={(e) => setCreateEmail(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="user@example.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-1">Display name</label>
-                    <input
-                      type="text"
-                      value={createDisplayName}
-                      onChange={(e) => setCreateDisplayName(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Optional"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-1">Auth type *</label>
-                    <select
-                      value={createAuthType}
-                      onChange={(e) => setCreateAuthType(e.target.value as 'Password' | 'AppRegistration')}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Password">Password</option>
-                      <option value="AppRegistration">App registration</option>
-                    </select>
-                  </div>
-                  {createAuthType === 'Password' && (
-                    <div>
-                      <label className="block text-gray-300 text-sm font-medium mb-1">Password (optional)</label>
-                      <input
-                        type="password"
-                        value={createPassword}
-                        onChange={(e) => setCreatePassword(e.target.value)}
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Leave empty to generate temporary password"
-                      />
-                      <p className="mt-1 text-gray-500 text-xs">{PASSWORD_RULES}</p>
-                      <p className="mt-0.5 text-amber-500/90 text-xs">
-                        If left empty, a temporary password is generated and the user must change it on first login.
-                      </p>
-                    </div>
-                  )}
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={resetCreateModal}
-                      className="flex-1 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={createLoading}
-                      className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {createLoading ? 'Creating...' : 'Create user'}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Display Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Auth Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
+        <Paper sx={{ overflow: 'hidden' }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Email</TableCell>
+                <TableCell>Display Name</TableCell>
+                <TableCell>Auth Type</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {users.map((user) => (
-                <tr key={user.email} className="hover:bg-gray-750">
-                  <td className="px-6 py-4 text-white">{user.email}</td>
-                  <td className="px-6 py-4 text-gray-300">{user.displayName || '-'}</td>
-                  <td className="px-6 py-4 text-gray-300">{user.authType}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      user.isActive 
-                        ? 'bg-green-900/50 text-green-300' 
-                        : 'bg-red-900/50 text-red-300'
-                    }`}>
-                      {user.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    {user.isTemporaryPassword && (
-                      <span className="ml-2 px-2 py-1 rounded text-xs bg-yellow-900/50 text-yellow-300">
-                        Temp Password
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleResetPassword(user.email)}
-                        className="p-2 text-blue-400 hover:bg-blue-900/30 rounded"
-                        title="Reset Password"
-                      >
-                        <Key className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <TableRow key={user.email} hover>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.displayName || '-'}</TableCell>
+                  <TableCell>{user.authType}</TableCell>
+                  <TableCell>
+                    <Chip label={user.isActive ? 'Active' : 'Inactive'} color={user.isActive ? 'success' : 'error'} size="small" sx={{ mr: 0.5 }} />
+                    {user.isTemporaryPassword && <Chip label="Temp Password" color="warning" size="small" />}
+                  </TableCell>
+                  <TableCell>
+                    <IconButton size="small" onClick={() => handleResetPassword(user.email)} title="Reset Password">
+                      <KeyIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+            </TableBody>
+          </Table>
+        </Paper>
+
+        <Dialog open={showCreateModal} onClose={resetCreateModal} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {createdTempPassword ? 'User created – save this password' : 'Create user'}
+            <IconButton onClick={resetCreateModal} size="small"><CloseIcon /></IconButton>
+          </DialogTitle>
+          <DialogContent>
+            {createdTempPassword ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Share this temporary password with the user. They will be required to change it on first login.
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <TextField value={createdTempPassword} fullWidth size="small" InputProps={{ readOnly: true }} sx={{ fontFamily: 'monospace' }} />
+                  <Button variant="contained" onClick={handleCopyTempPassword} startIcon={copied ? <CheckIcon /> : <ContentCopyIcon />}>
+                    {copied ? 'Copied' : 'Copy'}
+                  </Button>
+                </Box>
+                <Button variant="outlined" fullWidth onClick={handleDoneWithTempPassword}>Done</Button>
+              </Box>
+            ) : (
+              <Box component="form" onSubmit={handleCreateUser} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {createError && <Box sx={{ p: 1, bgcolor: 'error.dark', color: 'white', borderRadius: 1 }}>{createError}</Box>}
+                <TextField label="Email *" type="email" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} required fullWidth placeholder="user@example.com" />
+                <TextField label="Display name" value={createDisplayName} onChange={(e) => setCreateDisplayName(e.target.value)} fullWidth placeholder="Optional" />
+                <FormControl fullWidth>
+                  <InputLabel>Auth type *</InputLabel>
+                  <Select value={createAuthType} onChange={(e) => setCreateAuthType(e.target.value as 'Password' | 'AppRegistration')} label="Auth type *">
+                    <MenuItem value="Password">Password</MenuItem>
+                    <MenuItem value="AppRegistration">App registration</MenuItem>
+                  </Select>
+                </FormControl>
+                {createAuthType === 'Password' && (
+                  <>
+                    <TextField label="Password (optional)" type="password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} fullWidth placeholder="Leave empty to generate temporary password" helperText={PASSWORD_RULES} />
+                    <Typography variant="caption" color="warning.main">If left empty, a temporary password is generated.</Typography>
+                  </>
+                )}
+                <Box sx={{ display: 'flex', gap: 1, pt: 2 }}>
+                  <Button variant="outlined" fullWidth onClick={resetCreateModal}>Cancel</Button>
+                  <Button type="submit" variant="contained" fullWidth disabled={createLoading}>{createLoading ? 'Creating...' : 'Create user'}</Button>
+                </Box>
+              </Box>
+            )}
+          </DialogContent>
+        </Dialog>
+      </Box>
+    </Box>
   );
 }

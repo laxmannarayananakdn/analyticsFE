@@ -1,22 +1,39 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useToast } from '../context/ToastContext';
+import Box from '@mui/material/Box';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
+import CircularProgress from '@mui/material/CircularProgress';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DownloadIcon from '@mui/icons-material/Download';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import SearchIcon from '@mui/icons-material/Search';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ErrorIcon from '@mui/icons-material/Error';
 import { efService, Upload, FileType } from '../services/EFService';
-import {
-  X,
-  Trash2,
-  Download,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  ArrowUpDown,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  Info
-} from 'lucide-react';
 
 interface UploadDetailsModalProps {
   upload: Upload;
@@ -26,18 +43,13 @@ interface UploadDetailsModalProps {
   onRefresh?: () => void;
 }
 
-export default function UploadDetailsModal({
-  upload,
-  fileTypes,
-  onClose,
-  onDelete,
-  onRefresh
-}: UploadDetailsModalProps) {
+export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelete, onRefresh }: UploadDetailsModalProps) {
+  const { showToast } = useToast();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [limit] = useState(100);
+  const limit = 100;
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -49,9 +61,7 @@ export default function UploadDetailsModal({
 
   const fileType = fileTypes.find((ft) => ft.id === upload.file_type_id);
 
-  useEffect(() => {
-    loadData();
-  }, [upload.id, page]);
+  useEffect(() => { loadData(); }, [upload.id, page]);
 
   const loadData = async () => {
     try {
@@ -68,100 +78,55 @@ export default function UploadDetailsModal({
     }
   };
 
-  // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
     let result = [...data];
-
-    // Apply search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter((row) => {
-        return Object.values(row).some((value) => {
-          if (value === null || value === undefined) return false;
-          return String(value).toLowerCase().includes(term);
-        });
-      });
+      result = result.filter((row) => Object.values(row).some((value) => value != null && String(value).toLowerCase().includes(term)));
     }
-
-    // Apply sorting
     if (sortColumn) {
       result.sort((a, b) => {
         const aVal = a[sortColumn];
         const bVal = b[sortColumn];
-
-        if (aVal === null || aVal === undefined) return 1;
-        if (bVal === null || bVal === undefined) return -1;
-
-        const comparison =
-          typeof aVal === 'number' && typeof bVal === 'number'
-            ? aVal - bVal
-            : String(aVal).localeCompare(String(bVal));
-
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
+        const comparison = typeof aVal === 'number' && typeof bVal === 'number' ? aVal - bVal : String(aVal).localeCompare(String(bVal));
         return sortDirection === 'asc' ? comparison : -comparison;
       });
     }
-
     return result;
   }, [data, searchTerm, sortColumn, sortDirection]);
 
   const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('asc');
-    }
+    if (sortColumn === column) setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortColumn(column); setSortDirection('asc'); }
   };
 
   const handleExportCSV = async () => {
     try {
       setExporting(true);
-      
-      // Fetch all data (or at least more data)
       const result = await efService.getUploadData(upload.id, 1, 10000);
       const allData = result.data;
-
-      // Get column headers
       const headers = allData.length > 0 ? Object.keys(allData[0]) : [];
-      
-      // Filter out internal columns
-      const displayHeaders = headers.filter(
-        (h) => !['id', 'upload_id', 'file_name', 'uploaded_at', 'uploaded_by'].includes(h)
-      );
-
-      // Create CSV content
+      const displayHeaders = headers.filter((h) => !['id', 'upload_id', 'file_name', 'uploaded_at', 'uploaded_by'].includes(h));
       const csvRows = [
         displayHeaders.join(','),
         ...allData.map((row) =>
-          displayHeaders
-            .map((header) => {
-              const value = row[header];
-              if (value === null || value === undefined) return '';
-              // Escape quotes and wrap in quotes if contains comma or quote
-              const stringValue = String(value);
-              if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-                return `"${stringValue.replace(/"/g, '""')}"`;
-              }
-              return stringValue;
-            })
-            .join(',')
-        )
+          displayHeaders.map((header) => {
+            const value = row[header];
+            if (value == null) return '';
+            const s = String(value);
+            return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g, '""')}"` : s;
+          }).join(',')
+        ),
       ];
-
-      const csvContent = csvRows.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${upload.file_name}_data.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
+      link.href = URL.createObjectURL(blob);
+      link.download = `${upload.file_name}_data.csv`;
       link.click();
-      document.body.removeChild(link);
     } catch (err: any) {
-      console.error('Export error:', err);
-      alert('Failed to export CSV: ' + err.message);
+      showToast('Failed to export CSV: ' + err.message, 'error');
     } finally {
       setExporting(false);
     }
@@ -174,277 +139,80 @@ export default function UploadDetailsModal({
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  const formatDate = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleString();
-  };
+  const formatDate = (date: Date | string) => (typeof date === 'string' ? new Date(date) : date).toLocaleString();
 
-  const getStatusColor = (status: string) => {
+  const getStatusSeverity = (status: string): 'success' | 'error' | 'warning' | 'info' => {
     switch (status) {
-      case 'COMPLETED':
-        return 'text-green-400 bg-green-400/20';
-      case 'FAILED':
-        return 'text-red-400 bg-red-400/20';
-      case 'PROCESSING':
-        return 'text-yellow-400 bg-yellow-400/20';
-      case 'PENDING':
-        return 'text-gray-400 bg-gray-400/20';
-      default:
-        return 'text-gray-400 bg-gray-400/20';
+      case 'COMPLETED': return 'success';
+      case 'FAILED': return 'error';
+      case 'PROCESSING': return 'warning';
+      default: return 'info';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return <CheckCircle2 className="w-4 h-4" />;
-      case 'FAILED':
-        return <XCircle className="w-4 h-4" />;
-      case 'PROCESSING':
-        return <Clock className="w-4 h-4 animate-spin" />;
-      case 'PENDING':
-        return <Clock className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
+  const getCEMFinalColumnGroups = () => ({
+    student: { label: 'Student Info', columns: ['Student_ID', 'Class', 'Surname', 'Forename', 'Gender'] },
+    exam: { label: 'Exam Info', columns: ['Exam_Type', 'Subject_Title', 'Syllabus_Title', 'Exam_Board', 'Syllabus_Code'] },
+    grades: { label: 'Grades', columns: ['Grade', 'Grade_as_Points'] },
+    gcse: { label: 'GCSE Metrics', columns: ['GCSE_Score', 'GCSE_Prediction', 'GCSE_Residual', 'GCSE_Standardised_Residual', 'GCSE_Gender_Adj_Prediction', 'GCSE_Gender_Adj_Residual', 'GCSE_Gender_Adj_Std_Residual'] },
+    adaptive: { label: 'Adaptive Test Metrics', columns: ['Adaptive_Score', 'Adaptive_Prediction', 'Adaptive_Residual', 'Adaptive_Standardised_Residual', 'Adaptive_Gender_Adj_Prediction', 'Adaptive_Gender_Adj_Residual', 'Adaptive_Gender_Adj_Std_Residual'] },
+    tda: { label: 'TDA Test Metrics', columns: ['TDA_Score', 'TDA_Prediction', 'TDA_Residual', 'TDA_Standardised_Residual', 'TDA_Gender_Adj_Prediction', 'TDA_Gender_Adj_Residual', 'TDA_Gender_Adj_Std_Residual'] },
+  });
 
-  /**
-   * Get column tooltip text
-   */
-  const getColumnTooltip = (column: string): string | null => {
-    const tooltips: Record<string, string> = {
-      'Residual': 'Difference between actual and predicted grade',
-      'Standardised_Residual': 'Residual adjusted for comparison across subjects',
-      'Gender_Adj_Prediction': 'Prediction adjusted for gender-based performance patterns',
-      'Gender_Adj_Residual': 'Residual adjusted for gender-based performance patterns',
-      'Gender_Adj_Std_Residual': 'Standardised residual adjusted for gender-based performance patterns'
-    };
-
-    // Check if column name contains any of the tooltip keys
-    for (const [key, value] of Object.entries(tooltips)) {
-      if (column.includes(key)) {
-        return value;
-      }
-    }
-    return null;
-  };
-
-  /**
-   * Get column groups for CEM_FINAL
-   */
-  const getCEMFinalColumnGroups = () => {
-    return {
-      student: {
-        label: 'Student Info',
-        columns: ['Student_ID', 'Class', 'Surname', 'Forename', 'Gender']
-      },
-      exam: {
-        label: 'Exam Info',
-        columns: ['Exam_Type', 'Subject_Title', 'Syllabus_Title', 'Exam_Board', 'Syllabus_Code']
-      },
-      grades: {
-        label: 'Grades',
-        columns: ['Grade', 'Grade_as_Points']
-      },
-      gcse: {
-        label: 'GCSE Metrics',
-        columns: [
-          'GCSE_Score', 'GCSE_Prediction', 'GCSE_Residual', 'GCSE_Standardised_Residual',
-          'GCSE_Gender_Adj_Prediction', 'GCSE_Gender_Adj_Residual', 'GCSE_Gender_Adj_Std_Residual'
-        ]
-      },
-      adaptive: {
-        label: 'Adaptive Test Metrics',
-        columns: [
-          'Adaptive_Score', 'Adaptive_Prediction', 'Adaptive_Residual', 'Adaptive_Standardised_Residual',
-          'Adaptive_Gender_Adj_Prediction', 'Adaptive_Gender_Adj_Residual', 'Adaptive_Gender_Adj_Std_Residual'
-        ]
-      },
-      tda: {
-        label: 'TDA Test Metrics',
-        columns: [
-          'TDA_Score', 'TDA_Prediction', 'TDA_Residual', 'TDA_Standardised_Residual',
-          'TDA_Gender_Adj_Prediction', 'TDA_Gender_Adj_Residual', 'TDA_Gender_Adj_Std_Residual'
-        ]
-      }
-    };
-  };
-
-  /**
-   * Get key columns for preview (simplified view)
-   */
   const getKeyColumns = (): string[] => {
     if (!fileType) return [];
-    
-    if (fileType.type_code === 'CEM_INITIAL') {
-      return [
-        'Student_ID',
-        'Name',
-        'Class',
-        'Subject',
-        'Level',
-        'Test_Score',
-        'Test_Prediction_Grade'
-      ];
-    } else if (fileType.type_code === 'CEM_FINAL') {
-      // Use 'Name' as a placeholder - we'll combine Surname and Forename
-      return [
-        'Student_ID',
-        'Name', // This will be replaced with combined Surname + Forename
-        'Subject_Title',
-        'Grade',
-        'Adaptive_Prediction',
-        'Adaptive_Residual'
-      ];
-    }
+    if (fileType.type_code === 'CEM_INITIAL') return ['Student_ID', 'Name', 'Class', 'Subject', 'Level', 'Test_Score', 'Test_Prediction_Grade'];
+    if (fileType.type_code === 'CEM_FINAL') return ['Student_ID', 'Name', 'Subject_Title', 'Grade', 'Adaptive_Prediction', 'Adaptive_Residual'];
     return [];
   };
 
-  /**
-   * Format name for CEM_FINAL (combine Surname and Forename)
-   */
   const formatCEMFinalName = (row: any): string => {
     const surname = row.Surname || '';
     const forename = row.Forename || '';
-    if (surname && forename) {
-      return `${forename} ${surname}`;
-    }
-    return surname || forename || '-';
+    return (surname && forename) ? `${forename} ${surname}` : (surname || forename || '-');
   };
 
-  /**
-   * Get all columns for a file type
-   */
   const getAllColumns = (): string[] => {
     if (!fileType) return [];
-    
-    if (fileType.type_code === 'IB_EXTERNAL_EXAMS') {
-      return [
-        'Year',
-        'Month',
-        'School',
-        'Registration_Number',
-        'Personal_Code',
-        'Name',
-        'Category',
-        'Subject',
-        'Level',
-        'Language',
-        'Predicted_Grade',
-        'Grade',
-        'EE_TOK_Points',
-        'Total_Points',
-        'Result',
-        'Diploma_Requirements_Code'
-      ];
-    } else if (fileType.type_code === 'MSNAV_FINANCIAL_AID') {
-      return [
-        'S_No',
-        'UCI',
-        'Academic_Year',
-        'Class',
-        'Class_Code',
-        'Student_No',
-        'Student_Name',
-        'Percentage',
-        'Fee_Classification',
-        'FA_Sub_Type',
-        'Fee_Code',
-        'Community_Status'
-      ];
-    } else if (fileType.type_code === 'CEM_INITIAL') {
-      return [
-        'Student_ID',
-        'Class',
-        'Name',
-        'Gender',
-        'Date_of_Birth',
-        'Year_Group',
-        'GCSE_Score',
-        'Subject',
-        'Level',
-        'GCSE_Prediction_Points',
-        'GCSE_Prediction_Grade',
-        'Test_Taken',
-        'Test_Score',
-        'Test_Prediction_Points',
-        'Test_Prediction_Grade'
-      ];
-    } else if (fileType.type_code === 'CEM_FINAL') {
-      // Return all columns for CEM_FINAL, but replace Surname/Forename with combined Name
+    if (fileType.type_code === 'IB_EXTERNAL_EXAMS') return ['Year', 'Month', 'School', 'Registration_Number', 'Personal_Code', 'Name', 'Category', 'Subject', 'Level', 'Language', 'Predicted_Grade', 'Grade', 'EE_TOK_Points', 'Total_Points', 'Result', 'Diploma_Requirements_Code'];
+    if (fileType.type_code === 'MSNAV_FINANCIAL_AID') return ['S_No', 'UCI', 'Academic_Year', 'Class', 'Class_Code', 'Student_No', 'Student_Name', 'Percentage', 'Fee_Classification', 'FA_Sub_Type', 'Fee_Code', 'Community_Status'];
+    if (fileType.type_code === 'CEM_INITIAL') return ['Student_ID', 'Class', 'Name', 'Gender', 'Date_of_Birth', 'Year_Group', 'GCSE_Score', 'Subject', 'Level', 'GCSE_Prediction_Points', 'GCSE_Prediction_Grade', 'Test_Taken', 'Test_Score', 'Test_Prediction_Points', 'Test_Prediction_Grade'];
+    if (fileType.type_code === 'CEM_FINAL') {
       const groups = getCEMFinalColumnGroups();
-      const allCols = [
-        ...groups.student.columns,
-        ...groups.exam.columns,
-        ...groups.grades.columns,
-        ...groups.gcse.columns,
-        ...groups.adaptive.columns,
-        ...groups.tda.columns
-      ];
-      // Replace Surname and Forename with a combined Name column
+      const allCols = [...groups.student.columns, ...groups.exam.columns, ...groups.grades.columns, ...groups.gcse.columns, ...groups.adaptive.columns, ...groups.tda.columns];
       const nameIndex = allCols.indexOf('Surname');
       if (nameIndex !== -1) {
-        allCols[nameIndex] = 'Name'; // Replace Surname with Name
-        const forenameIndex = allCols.indexOf('Forename');
-        if (forenameIndex !== -1) {
-          allCols.splice(forenameIndex, 1); // Remove Forename
-        }
+        allCols[nameIndex] = 'Name';
+        const fi = allCols.indexOf('Forename');
+        if (fi !== -1) allCols.splice(fi, 1);
       }
       return allCols;
     }
     return [];
   };
 
-  /**
-   * Get columns to display based on file type and showAllColumns setting
-   */
   const getColumns = () => {
     if (!fileType) return [];
-    
-    // For CEM types, show key columns by default, all columns if toggle is on
-    if (fileType.type_code === 'CEM_INITIAL' || fileType.type_code === 'CEM_FINAL') {
-      return showAllColumns ? getAllColumns() : getKeyColumns();
-    }
-    
-    // For other types, always show all columns
+    if (fileType.type_code === 'CEM_INITIAL' || fileType.type_code === 'CEM_FINAL') return showAllColumns ? getAllColumns() : getKeyColumns();
     return getAllColumns();
   };
 
-  /**
-   * Format cell value with color coding for residuals
-   */
-  const formatCellValue = (column: string, value: any): { text: string; className: string } => {
-    if (value === null || value === undefined) {
-      return { text: '-', className: '' };
-    }
-
+  const formatCellValue = (column: string, value: any): { text: string; color?: string } => {
+    if (value == null) return { text: '-' };
     const text = String(value);
-    
-    // Color code residuals: green for positive, red for negative
     if (column.includes('Residual') && !column.includes('Standardised') && typeof value === 'number') {
-      if (value > 0) {
-        return { text, className: 'text-green-400 font-medium' };
-      } else if (value < 0) {
-        return { text, className: 'text-red-400 font-medium' };
-      }
+      if (value > 0) return { text, color: 'success.main' };
+      if (value < 0) return { text, color: 'error.main' };
     }
-    
-    return { text, className: '' };
+    return { text };
   };
 
-  /**
-   * Toggle section expansion for CEM_FINAL
-   */
-  const toggleSection = (sectionKey: string) => {
+  const toggleSection = (key: string) => {
     setExpandedSections((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionKey)) {
-        newSet.delete(sectionKey);
-      } else {
-        newSet.add(sectionKey);
-      }
-      return newSet;
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
     });
   };
 
@@ -452,507 +220,190 @@ export default function UploadDetailsModal({
   const totalPages = Math.ceil(total / limit);
   const displayData = filteredAndSortedData.slice(0, limit);
 
+  const renderDataTable = (cols: string[], getDisplayValue: (row: any, col: string) => any) => (
+    <Table size="small">
+      <TableHead>
+        <TableRow>
+          {cols.map((col) => (
+            <TableCell key={col} component="th" onClick={() => (col === 'Name' ? handleSort('Surname') : handleSort(col))} sx={{ cursor: 'pointer' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {col.replace(/_/g, ' ')}
+                <SwapVertIcon fontSize="small" />
+              </Box>
+            </TableCell>
+          ))}
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {displayData.map((row, idx) => (
+          <TableRow key={row.id || idx} hover>
+            {cols.map((col) => {
+              const val = getDisplayValue(row, col);
+              const { text, color } = formatCellValue(col, val);
+              return (
+                <TableCell key={col} sx={{ color: color || 'inherit' }}>{text}</TableCell>
+              );
+            })}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gray-800 rounded-lg max-w-7xl w-full max-h-[95vh] overflow-hidden flex flex-col my-8">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Upload Details</h2>
-            <p className="text-gray-400 text-sm mt-1">Upload ID: {upload.id}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition p-2"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Upload Metadata */}
-          <div className="bg-gray-700/50 rounded-lg p-6 mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Upload Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-400">File Type</label>
-                <p className="text-white">{fileType?.type_name || 'Unknown'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-400">File Name</label>
-                <p className="text-white break-all">{upload.file_name}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-400">File Size</label>
-                <p className="text-white">{formatFileSize(upload.file_size_bytes)}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-400">Rows Uploaded</label>
-                <p className="text-white">{upload.row_count ?? 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-400">Status</label>
-                <p className="text-white">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                      upload.status
-                    )}`}
-                  >
-                    {getStatusIcon(upload.status)}
-                    {upload.status}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-400">Uploaded By</label>
-                <p className="text-white">{upload.uploaded_by}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-400">Upload Date/Time</label>
-                <p className="text-white">{formatDate(upload.uploaded_at)}</p>
-              </div>
-              {upload.processed_at && (
-                <div>
-                  <label className="text-sm font-medium text-gray-400">Processed Date/Time</label>
-                  <p className="text-white">{formatDate(upload.processed_at)}</p>
-                </div>
-              )}
-            </div>
-            {upload.error_message && (
-              <div className="mt-4 p-4 bg-red-900/30 border border-red-700 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <label className="text-sm font-medium text-red-400">Error Message</label>
-                    <p className="text-red-300 mt-1">{upload.error_message}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Data Preview */}
-          {upload.status === 'COMPLETED' && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Data Preview</h3>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleExportCSV}
-                    disabled={exporting || data.length === 0}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
-                  >
-                    {exporting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Download className="w-4 h-4" />
-                    )}
-                    Export CSV
-                  </button>
-                </div>
-              </div>
-
-              {/* Search */}
-              <div className="mb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search data..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Show All Columns Toggle for CEM types */}
-              {(fileType?.type_code === 'CEM_INITIAL' || fileType?.type_code === 'CEM_FINAL') && (
-                <div className="mb-4 flex items-center gap-2">
-                  <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showAllColumns}
-                      onChange={(e) => setShowAllColumns(e.target.checked)}
-                      className="w-4 h-4 rounded bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>Show All Columns ({getAllColumns().length} total)</span>
-                  </label>
-                  {!showAllColumns && (
-                    <span className="text-xs text-gray-400">
-                      (Showing {getKeyColumns().length} key columns)
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Data Table */}
-              {loading ? (
-                <div className="text-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
-                  <p className="text-gray-400">Loading data...</p>
-                </div>
-              ) : error ? (
-                <div className="text-center py-12">
-                  <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                  <p className="text-red-400">{error}</p>
-                  <button
-                    onClick={loadData}
-                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : displayData.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-400">No data found</p>
-                </div>
-              ) : fileType?.type_code === 'CEM_FINAL' && !showAllColumns ? (
-                // CEM_FINAL with grouped sections (when not showing all columns)
-                <div className="space-y-4">
-                  {/* Key columns table first */}
-                  <div className="border border-gray-700 rounded-lg overflow-hidden">
-                    <div className="px-4 py-3 bg-gray-700/50 border-b border-gray-700">
-                      <span className="font-medium text-white">Key Information</span>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-gray-700 bg-gray-800/50">
-                            {getKeyColumns().map((column) => {
-                              const tooltip = getColumnTooltip(column);
-                              return (
-                                <th
-                                  key={column}
-                                  className="text-left py-2 px-4 text-xs font-medium text-gray-300 cursor-pointer hover:bg-gray-700/50 transition relative group"
-                                  onClick={() => {
-                                    // For Name column, sort by Surname first
-                                    if (column === 'Name') {
-                                      handleSort('Surname');
-                                    } else {
-                                      handleSort(column);
-                                    }
-                                  }}
-                                >
-                                  <div className="flex items-center gap-1">
-                                    {column.replace(/_/g, ' ')}
-                                    <ArrowUpDown className="w-3 h-3" />
-                                    {tooltip && (
-                                      <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs rounded px-2 py-1 shadow-lg whitespace-nowrap border border-gray-700">
-                                        <Info className="w-3 h-3 inline mr-1" />
-                                        {tooltip}
-                                      </div>
-                                    )}
-                                  </div>
-                                </th>
-                              );
-                            })}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {displayData.map((row, idx) => (
-                            <tr
-                              key={row.id || idx}
-                              className="border-b border-gray-700 hover:bg-gray-700/30"
-                            >
-                              {getKeyColumns().map((column) => {
-                                let displayValue: any;
-                                if (column === 'Surname' || column === 'Forename') {
-                                  displayValue = formatCEMFinalName(row);
-                                } else {
-                                  displayValue = row[column];
-                                }
-                                const { text, className } = formatCellValue(column, displayValue);
-                                return (
-                                  <td key={column} className={`py-2 px-4 text-xs text-gray-300 ${className}`}>
-                                    {text}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Expandable sections for other column groups */}
-                  {Object.entries(getCEMFinalColumnGroups()).map(([key, group]) => {
-                    // Skip student and grades sections as they're in key columns
-                    if (key === 'student' || key === 'grades') return null;
-                    
-                    const isExpanded = expandedSections.has(key);
-                    const visibleColumns = isExpanded ? group.columns : [];
-                    const hasVisibleData = visibleColumns.some(col => 
-                      displayData.some(row => row[col] !== null && row[col] !== undefined)
-                    );
-
-                    return (
-                      <div key={key} className="border border-gray-700 rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => toggleSection(key)}
-                          className="w-full px-4 py-3 bg-gray-700/50 hover:bg-gray-700/70 transition flex items-center justify-between text-left"
-                        >
-                          <span className="font-medium text-white">{group.label}</span>
-                          {isExpanded ? (
-                            <ChevronUp className="w-5 h-5 text-gray-400" />
-                          ) : (
-                            <ChevronDown className="w-5 h-5 text-gray-400" />
-                          )}
-                        </button>
-                        {isExpanded && hasVisibleData && (
-                          <div className="overflow-x-auto">
-                            <table className="w-full">
-                              <thead>
-                                <tr className="border-b border-gray-700 bg-gray-800/50">
-                                  {visibleColumns.map((column) => {
-                                    const tooltip = getColumnTooltip(column);
-                                    return (
-                                      <th
-                                        key={column}
-                                        className="text-left py-2 px-4 text-xs font-medium text-gray-300 cursor-pointer hover:bg-gray-700/50 transition relative group"
-                                        onClick={() => handleSort(column)}
-                                      >
-                                        <div className="flex items-center gap-1">
-                                          {column.replace(/_/g, ' ')}
-                                          <ArrowUpDown className="w-3 h-3" />
-                                          {tooltip && (
-                                            <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs rounded px-2 py-1 shadow-lg whitespace-nowrap border border-gray-700">
-                                              <Info className="w-3 h-3 inline mr-1" />
-                                              {tooltip}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </th>
-                                    );
-                                  })}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {displayData.map((row, idx) => (
-                                  <tr
-                                    key={row.id || idx}
-                                    className="border-b border-gray-700 hover:bg-gray-700/30"
-                                  >
-                                    {visibleColumns.map((column) => {
-                                      const { text, className } = formatCellValue(column, row[column]);
-                                      return (
-                                        <td key={column} className={`py-2 px-4 text-xs text-gray-300 ${className}`}>
-                                          {text}
-                                        </td>
-                                      );
-                                    })}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="text-sm text-gray-400">
-                        Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} rows
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={page === 1}
-                          className="p-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                        >
-                          <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <span className="text-white px-4">
-                          Page {page} of {totalPages}
-                        </span>
-                        <button
-                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={page === totalPages}
-                          className="p-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {searchTerm && (
-                    <div className="mt-2 text-sm text-gray-400">
-                      Showing {displayData.length} of {data.length} rows (filtered)
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // Standard table view for all other cases
-                <>
-                  <div className="overflow-x-auto mb-4">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-700">
-                          {columns.map((column) => {
-                            const tooltip = getColumnTooltip(column);
-                            return (
-                              <th
-                                key={column}
-                                className="text-left py-3 px-4 text-sm font-medium text-gray-300 cursor-pointer hover:bg-gray-700/50 transition relative group"
-                                onClick={() => handleSort(column)}
-                              >
-                                <div className="flex items-center gap-2">
-                                  {column.replace(/_/g, ' ')}
-                                  <ArrowUpDown className="w-4 h-4" />
-                                  {tooltip && (
-                                    <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs rounded px-2 py-1 shadow-lg whitespace-nowrap border border-gray-700">
-                                      <Info className="w-3 h-3 inline mr-1" />
-                                      {tooltip}
-                                    </div>
-                                  )}
-                                </div>
-                              </th>
-                            );
-                          })}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {displayData.map((row, idx) => (
-                          <tr
-                            key={row.id || idx}
-                            className="border-b border-gray-700 hover:bg-gray-700/30"
-                          >
-                            {columns.map((column) => {
-                              // For CEM_FINAL, combine Surname and Forename when column is 'Name'
-                              let displayValue: any = row[column];
-                              if (fileType?.type_code === 'CEM_FINAL' && column === 'Name') {
-                                displayValue = formatCEMFinalName(row);
-                              }
-                              const { text, className } = formatCellValue(column, displayValue);
-                              return (
-                                <td key={column} className={`py-3 px-4 text-sm text-gray-300 ${className}`}>
-                                  {text}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="text-sm text-gray-400">
-                        Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} rows
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={page === 1}
-                          className="p-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                        >
-                          <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <span className="text-white px-4">
-                          Page {page} of {totalPages}
-                        </span>
-                        <button
-                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={page === totalPages}
-                          className="p-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {searchTerm && (
-                    <div className="mt-2 text-sm text-gray-400">
-                      Showing {displayData.length} of {data.length} rows (filtered)
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+    <Dialog open onClose={onClose} maxWidth="xl" fullWidth PaperProps={{ sx: { maxHeight: '95vh' } }}>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h6">Upload Details</Typography>
+          <Typography variant="body2" color="text.secondary">Upload ID: {upload.id}</Typography>
+        </Box>
+        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Box sx={{ mb: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Upload Information</Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
+            <Box><Typography variant="caption" color="text.secondary">File Type</Typography><Typography>{fileType?.type_name || 'Unknown'}</Typography></Box>
+            <Box><Typography variant="caption" color="text.secondary">File Name</Typography><Typography sx={{ wordBreak: 'break-all' }}>{upload.file_name}</Typography></Box>
+            <Box><Typography variant="caption" color="text.secondary">File Size</Typography><Typography>{formatFileSize(upload.file_size_bytes)}</Typography></Box>
+            <Box><Typography variant="caption" color="text.secondary">Rows</Typography><Typography>{upload.row_count ?? 'N/A'}</Typography></Box>
+            <Box><Typography variant="caption" color="text.secondary">Status</Typography><Chip label={upload.status} color={getStatusSeverity(upload.status)} size="small" /></Box>
+            <Box><Typography variant="caption" color="text.secondary">Uploaded By</Typography><Typography>{upload.uploaded_by}</Typography></Box>
+            <Box><Typography variant="caption" color="text.secondary">Upload Date</Typography><Typography>{formatDate(upload.uploaded_at)}</Typography></Box>
+            {upload.processed_at && <Box><Typography variant="caption" color="text.secondary">Processed</Typography><Typography>{formatDate(upload.processed_at)}</Typography></Box>}
+          </Box>
+          {upload.error_message && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'error.dark', borderRadius: 1 }}>
+              <Typography variant="body2" color="error.contrastText">{upload.error_message}</Typography>
+            </Box>
           )}
+        </Box>
 
-          {upload.status !== 'COMPLETED' && (
-            <div className="text-center py-12">
-              <p className="text-gray-400">
-                {upload.status === 'FAILED'
-                  ? 'Upload failed. Data is not available.'
-                  : 'Data preview will be available once processing is complete.'}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-700">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
-          >
-            Close
-          </button>
-          <div className="flex items-center gap-4">
-            {onRefresh && (
-              <button
-                onClick={() => {
-                  onRefresh();
-                  loadData();
-                }}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
-                Refresh
-              </button>
+        {upload.status === 'COMPLETED' && (
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600}>Data Preview</Typography>
+              <Button variant="contained" color="success" onClick={handleExportCSV} disabled={exporting || data.length === 0} startIcon={exporting ? <CircularProgress size={16} /> : <DownloadIcon />}>
+                Export CSV
+              </Button>
+            </Box>
+            <TextField
+              fullWidth
+              placeholder="Search data..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="small"
+              sx={{ mb: 2 }}
+              InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }}
+            />
+            {(fileType?.type_code === 'CEM_INITIAL' || fileType?.type_code === 'CEM_FINAL') && (
+              <FormControlLabel
+                control={<Checkbox checked={showAllColumns} onChange={(e) => setShowAllColumns(e.target.checked)} />}
+                label={`Show All Columns (${getAllColumns().length} total)`}
+                sx={{ mb: 2 }}
+              />
             )}
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete Upload
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-white mb-4">Confirm Delete</h3>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to delete this upload? This will also delete all
-              associated data records ({upload.row_count || 0} rows). This action cannot be undone.
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  onDelete(upload.id);
-                  setShowDeleteConfirm(false);
-                  onClose();
-                }}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              >
-                Delete
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            {loading ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}><CircularProgress /><Typography sx={{ mt: 2 }}>Loading data...</Typography></Box>
+            ) : error ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <ErrorIcon color="error" sx={{ fontSize: 40 }} />
+                <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>
+                <Button variant="contained" onClick={loadData} sx={{ mt: 2 }}>Retry</Button>
+              </Box>
+            ) : displayData.length === 0 ? (
+              <Typography color="text.secondary" textAlign="center" py={4}>No data found</Typography>
+            ) : fileType?.type_code === 'CEM_FINAL' && !showAllColumns ? (
+              <Box>
+                <Paper variant="outlined" sx={{ mb: 2, overflow: 'hidden' }}>
+                  <Box sx={{ p: 2, bgcolor: 'action.hover' }}><Typography fontWeight={500}>Key Information</Typography></Box>
+                  <Box sx={{ overflowX: 'auto' }}>
+                    {renderDataTable(getKeyColumns(), (row, col) => (col === 'Name' ? formatCEMFinalName(row) : row[col]))}
+                  </Box>
+                </Paper>
+                {Object.entries(getCEMFinalColumnGroups()).map(([key, group]) => {
+                  if (key === 'student' || key === 'grades') return null;
+                  const isExpanded = expandedSections.has(key);
+                  const hasVisibleData = group.columns.some((col) => displayData.some((row) => row[col] != null));
+                  return (
+                    <Accordion key={key} expanded={isExpanded} onChange={() => toggleSection(key)}>
+                      <AccordionSummary expandIcon={isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}>
+                        <Typography fontWeight={500}>{group.label}</Typography>
+                      </AccordionSummary>
+                      {hasVisibleData && (
+                        <AccordionDetails>
+                          <Box sx={{ overflowX: 'auto' }}>{renderDataTable(group.columns, (row, col) => row[col])}</Box>
+                        </AccordionDetails>
+                      )}
+                    </Accordion>
+                  );
+                })}
+                {totalPages > 1 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton size="small" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeftIcon /></IconButton>
+                      <Typography sx={{ alignSelf: 'center' }}>Page {page} of {totalPages}</Typography>
+                      <IconButton size="small" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}><ChevronRightIcon /></IconButton>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            ) : (
+              <Box>
+                <Paper variant="outlined" sx={{ overflow: 'auto' }}>
+                  <Box sx={{ overflowX: 'auto' }}>
+                    {renderDataTable(columns, (row, col) => (fileType?.type_code === 'CEM_FINAL' && col === 'Name' ? formatCEMFinalName(row) : row[col]))}
+                  </Box>
+                </Paper>
+                {totalPages > 1 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton size="small" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeftIcon /></IconButton>
+                      <Typography sx={{ alignSelf: 'center' }}>Page {page} of {totalPages}</Typography>
+                      <IconButton size="small" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}><ChevronRightIcon /></IconButton>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {upload.status !== 'COMPLETED' && (
+          <Typography color="text.secondary" textAlign="center" py={4}>
+            {upload.status === 'FAILED' ? 'Upload failed. Data is not available.' : 'Data preview will be available once processing is complete.'}
+          </Typography>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+        {onRefresh && (
+          <Button variant="contained" onClick={() => { onRefresh(); loadData(); }}>Refresh</Button>
+        )}
+        <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={() => setShowDeleteConfirm(true)}>
+          Delete Upload
+        </Button>
+      </DialogActions>
+
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this upload? This will also delete all associated data records ({upload.row_count || 0} rows). This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={() => { onDelete(upload.id); setShowDeleteConfirm(false); onClose(); }}>Delete</Button>
+        </DialogActions>
+      </Dialog>
+    </Dialog>
   );
 }
-

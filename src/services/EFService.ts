@@ -114,13 +114,8 @@ class EFService {
             'Content-Type': 'multipart/form-data',
           },
           timeout: 300000, // 5 minutes for large files
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const percentCompleted = Math.round(
-                (progressEvent.loaded * 100) / progressEvent.total
-              );
-              // Progress will be handled by the component
-            }
+          onUploadProgress: () => {
+            // Progress will be handled by the component
           },
         }
       );

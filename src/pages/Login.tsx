@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
 import { authService } from '../services/AuthService';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 export default function Login() {
   const location = useLocation();
@@ -38,59 +46,61 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-white mb-6 text-center">Login</h1>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        p: 2,
+      }}
+    >
+      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+        <ThemeSwitcher />
+      </Box>
+      <Card sx={{ maxWidth: 400, width: '100%' }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h4" component="h1" gutterBottom textAlign="center">
+            Login
+          </Typography>
 
-        {message && (
-          <div className="mb-4 p-3 bg-green-900/50 border border-green-700 rounded text-green-200 text-sm">
-            {message}
-          </div>
-        )}
-        {error && (
-          <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-200 text-sm">
-            {error}
-          </div>
-        )}
+          {message && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {message}
+            </Alert>
+          )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-300 text-sm font-medium mb-2">
-              Email
-            </label>
-            <input
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              fullWidth
               placeholder="user@example.com"
             />
-          </div>
-
-          <div>
-            <label className="block text-gray-300 text-sm font-medium mb-2">
-              Password
-            </label>
-            <input
+            <TextField
+              label="Password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              fullWidth
               placeholder="Enter your password"
             />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-      </div>
-    </div>
+            <Button type="submit" variant="contained" fullWidth disabled={loading} size="large">
+              {loading ? 'Logging in...' : 'Login'}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

@@ -1,17 +1,33 @@
-import { useState, useEffect } from 'react';
-import {
-  Settings,
-  Save,
-  Plus,
-  Trash2,
-  RefreshCw,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  X,
-  BookOpen,
-  FileText
-} from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import IconButton from '@mui/material/IconButton';
+import SettingsIcon from '@mui/icons-material/Settings';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import SaveIcon from '@mui/icons-material/Save';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import DescriptionIcon from '@mui/icons-material/Description';
 import {
   rpConfigService,
   SubjectMapping,
@@ -31,29 +47,22 @@ export default function RPConfig() {
   const [activeTab, setActiveTab] = useState<TabType>('subject-mapping');
   const [loading, setLoading] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const toastIdRef = useState(0);
+  const toastIdRef = useRef(0);
 
-  // Filter state
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>('');
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('');
-
-  // Data state
   const [schools, setSchools] = useState<School[]>([]);
   const [academicYears, setAcademicYears] = useState<string[]>([]);
-  const [subjectMappings, setSubjectMappings] = useState<SubjectMapping[]>([]);
-  const [componentConfigs, setComponentConfigs] = useState<AssessmentComponentConfig[]>([]);
-
-  // Editable data state
+  const [, setSubjectMappings] = useState<SubjectMapping[]>([]);
+  const [, setComponentConfigs] = useState<AssessmentComponentConfig[]>([]);
   const [editableMappings, setEditableMappings] = useState<SubjectMapping[]>([]);
   const [editableConfigs, setEditableConfigs] = useState<AssessmentComponentConfig[]>([]);
 
-  // Load initial data
   useEffect(() => {
     loadSchools();
     loadAcademicYears();
   }, []);
 
-  // Load data when filters change
   useEffect(() => {
     if (activeTab === 'subject-mapping' && selectedSchoolId && selectedAcademicYear) {
       loadSubjectMappings();
@@ -65,9 +74,7 @@ export default function RPConfig() {
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = `toast-${Date.now()}-${toastIdRef.current++}`;
     setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 5000);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
   };
 
   const loadSchools = async () => {
@@ -122,7 +129,6 @@ export default function RPConfig() {
     try {
       setLoading(true);
       const response = await rpConfigService.saveSubjectMappings(editableMappings);
-      
       if (response.success) {
         showToast(
           `Saved ${response.successCount} mapping(s) successfully${response.errorCount ? ` (${response.errorCount} error(s))` : ''}`,
@@ -144,7 +150,6 @@ export default function RPConfig() {
     try {
       setLoading(true);
       const response = await rpConfigService.saveAssessmentComponentConfigs(editableConfigs);
-      
       if (response.success) {
         showToast(
           `Saved ${response.successCount} config(s) successfully${response.errorCount ? ` (${response.errorCount} error(s))` : ''}`,
@@ -169,13 +174,7 @@ export default function RPConfig() {
     }
     setEditableMappings([
       ...editableMappings,
-      {
-        school_id: selectedSchoolId,
-        academic_year: selectedAcademicYear,
-        grade: '',
-        subject: '',
-        reported_subject: null
-      }
+      { school_id: selectedSchoolId, academic_year: selectedAcademicYear, grade: '', subject: '', reported_subject: null }
     ]);
   };
 
@@ -184,19 +183,11 @@ export default function RPConfig() {
       showToast('Please select school first', 'error');
       return;
     }
-    setEditableConfigs([
-      ...editableConfigs,
-      {
-        school_id: selectedSchoolId,
-        component_name: '',
-        is_active: true
-      }
-    ]);
+    setEditableConfigs([...editableConfigs, { school_id: selectedSchoolId, component_name: '', is_active: true }]);
   };
 
   const handleDeleteSubjectMapping = async (id: number) => {
     if (!confirm('Are you sure you want to delete this mapping?')) return;
-
     try {
       await rpConfigService.deleteSubjectMapping(id);
       showToast('Subject mapping deleted successfully', 'success');
@@ -209,7 +200,6 @@ export default function RPConfig() {
 
   const handleDeleteComponentConfig = async (id: number) => {
     if (!confirm('Are you sure you want to delete this config?')) return;
-
     try {
       await rpConfigService.deleteAssessmentComponentConfig(id);
       showToast('Component config deleted successfully', 'success');
@@ -233,308 +223,173 @@ export default function RPConfig() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-            <Settings className="w-8 h-8" />
+    <Box sx={{ minHeight: '100vh', p: { xs: 2, md: 3 }, bgcolor: 'background.default' }}>
+      <Box sx={{ maxWidth: 1280, mx: 'auto' }}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h4" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <SettingsIcon />
             RP Configuration Management
-          </h1>
-          <p className="text-gray-400">Manage subject mappings and assessment component configurations</p>
-        </div>
+          </Typography>
+          <Typography color="text.secondary">Manage subject mappings and assessment component configurations</Typography>
+        </Box>
 
-        {/* Toast Notifications */}
-        <div className="fixed top-4 right-4 z-50 space-y-2">
-          {toasts.map((toast) => (
-            <div
-              key={toast.id}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg min-w-[300px] ${
-                toast.type === 'success'
-                  ? 'bg-green-600 text-white'
-                  : toast.type === 'error'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-blue-600 text-white'
-              }`}
-            >
-              {toast.type === 'success' && <CheckCircle2 className="w-5 h-5" />}
-              {toast.type === 'error' && <XCircle className="w-5 h-5" />}
-              {toast.type === 'info' && <AlertCircle className="w-5 h-5" />}
-              <span className="flex-1">{toast.message}</span>
-              <button
-                onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
-                className="hover:opacity-70"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
+        <Snackbar open={toasts.length > 0} anchorOrigin={{ vertical: 'top', horizontal: 'right' }} sx={{ mt: 6 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {toasts.map((toast) => (
+              <Alert key={toast.id} severity={toast.type === 'error' ? 'error' : toast.type === 'success' ? 'success' : 'info'} onClose={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}>
+                {toast.message}
+              </Alert>
+            ))}
+          </Box>
+        </Snackbar>
 
-        {/* Filters */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                School <span className="text-red-400">*</span>
-              </label>
-              <select
-                value={selectedSchoolId}
-                onChange={(e) => setSelectedSchoolId(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Select a school</option>
-                {schools.map((school) => (
-                  <option key={school.school_id} value={school.school_id}>
-                    {school.school_name || school.school_id}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {activeTab === 'subject-mapping' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Academic Year <span className="text-red-400">*</span>
-                </label>
-                <select
-                  value={selectedAcademicYear}
-                  onChange={(e) => setSelectedAcademicYear(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
-                >
-                  <option value="">Select academic year</option>
-                  {academicYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr 1fr auto' }, gap: 2, alignItems: 'flex-end' }}>
+              <FormControl fullWidth>
+                <InputLabel>School *</InputLabel>
+                <Select value={selectedSchoolId} onChange={(e) => setSelectedSchoolId(e.target.value)} label="School *">
+                  <MenuItem value="">Select a school</MenuItem>
+                  {schools.map((school) => (
+                    <MenuItem key={school.school_id} value={school.school_id}>
+                      {school.school_name || school.school_id}
+                    </MenuItem>
                   ))}
-                </select>
-              </div>
-            )}
-
-            <div className="flex items-end">
-              <button
-                onClick={() => {
-                  if (activeTab === 'subject-mapping') {
-                    loadSubjectMappings();
-                  } else {
-                    loadComponentConfigs();
-                  }
-                }}
+                </Select>
+              </FormControl>
+              {activeTab === 'subject-mapping' && (
+                <FormControl fullWidth>
+                  <InputLabel>Academic Year *</InputLabel>
+                  <Select value={selectedAcademicYear} onChange={(e) => setSelectedAcademicYear(e.target.value)} label="Academic Year *">
+                    <MenuItem value="">Select academic year</MenuItem>
+                    {academicYears.map((year) => (
+                      <MenuItem key={year} value={year}>{year}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              <Button
+                variant="contained"
+                onClick={() => (activeTab === 'subject-mapping' ? loadSubjectMappings() : loadComponentConfigs())}
                 disabled={loading || (activeTab === 'subject-mapping' ? !selectedSchoolId || !selectedAcademicYear : !selectedSchoolId)}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                startIcon={<RefreshIcon />}
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
-              </button>
-            </div>
-          </div>
-        </div>
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
 
-        {/* Tabs */}
-        <div className="bg-gray-800 rounded-lg p-6">
-          <div className="flex gap-4 mb-6 border-b border-gray-700">
-            <button
-              onClick={() => setActiveTab('subject-mapping')}
-              className={`px-6 py-3 font-semibold transition flex items-center gap-2 ${
-                activeTab === 'subject-mapping'
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <BookOpen className="w-5 h-5" />
-              Subject Mapping
-            </button>
-            <button
-              onClick={() => setActiveTab('component-config')}
-              className={`px-6 py-3 font-semibold transition flex items-center gap-2 ${
-                activeTab === 'component-config'
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <FileText className="w-5 h-5" />
-              Assessment Component Config
-            </button>
-          </div>
-
-          {/* Subject Mapping Tab */}
-          {activeTab === 'subject-mapping' && (
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-white">Subject Mappings</h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleAddSubjectMapping}
-                    disabled={!selectedSchoolId || !selectedAcademicYear}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Row
-                  </button>
-                  <button
-                    onClick={handleSaveSubjectMappings}
-                    disabled={loading || editableMappings.length === 0}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    <Save className="w-4 h-4" />
-                    Save All
-                  </button>
-                </div>
-              </div>
-
-              {loading && editableMappings.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">Loading...</div>
-              ) : editableMappings.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  No subject mappings found. Select school and academic year, then click "Add Row" to create one.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-gray-700">
-                      <tr>
-                        <th className="px-4 py-3 text-gray-300 font-semibold">Grade</th>
-                        <th className="px-4 py-3 text-gray-300 font-semibold">Subject</th>
-                        <th className="px-4 py-3 text-gray-300 font-semibold">Reported Subject</th>
-                        <th className="px-4 py-3 text-gray-300 font-semibold w-20">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+        <Card>
+          <Tabs value={activeTab === 'subject-mapping' ? 0 : 1} onChange={(_, v: number) => setActiveTab(v === 0 ? 'subject-mapping' : 'component-config')} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tab label="Subject Mapping" icon={<MenuBookIcon />} iconPosition="start" />
+            <Tab label="Assessment Component Config" icon={<DescriptionIcon />} iconPosition="start" />
+          </Tabs>
+          <CardContent>
+            {activeTab === 'subject-mapping' && (
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">Subject Mappings</Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button variant="contained" color="success" onClick={handleAddSubjectMapping} disabled={!selectedSchoolId || !selectedAcademicYear} startIcon={<AddIcon />}>
+                      Add Row
+                    </Button>
+                    <Button variant="contained" onClick={handleSaveSubjectMappings} disabled={loading || editableMappings.length === 0} startIcon={<SaveIcon />}>
+                      Save All
+                    </Button>
+                  </Box>
+                </Box>
+                {loading && editableMappings.length === 0 ? (
+                  <Typography color="text.secondary" textAlign="center" py={4}>Loading...</Typography>
+                ) : editableMappings.length === 0 ? (
+                  <Typography color="text.secondary" textAlign="center" py={4}>
+                    No subject mappings found. Select school and academic year, then click "Add Row" to create one.
+                  </Typography>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Grade</TableCell>
+                        <TableCell>Subject</TableCell>
+                        <TableCell>Reported Subject</TableCell>
+                        <TableCell width={80}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                       {editableMappings.map((mapping, index) => (
-                        <tr key={mapping.id || index} className="border-b border-gray-700 hover:bg-gray-700/50">
-                          <td className="px-4 py-3">
-                            <input
-                              type="text"
-                              value={mapping.grade}
-                              onChange={(e) => updateSubjectMapping(index, 'grade', e.target.value)}
-                              className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                              placeholder="e.g., 10, 12"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
-                            <input
-                              type="text"
-                              value={mapping.subject}
-                              onChange={(e) => updateSubjectMapping(index, 'subject', e.target.value)}
-                              className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                              placeholder="e.g., Maths, Mathematics"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
-                            <input
-                              type="text"
-                              value={mapping.reported_subject || ''}
-                              onChange={(e) => updateSubjectMapping(index, 'reported_subject', e.target.value || null)}
-                              className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                              placeholder="e.g., Mathematics (can be empty)"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
+                        <TableRow key={mapping.id || index}>
+                          <TableCell><TextField size="small" fullWidth value={mapping.grade} onChange={(e) => updateSubjectMapping(index, 'grade', e.target.value)} placeholder="e.g., 10, 12" /></TableCell>
+                          <TableCell><TextField size="small" fullWidth value={mapping.subject} onChange={(e) => updateSubjectMapping(index, 'subject', e.target.value)} placeholder="e.g., Maths" /></TableCell>
+                          <TableCell><TextField size="small" fullWidth value={mapping.reported_subject || ''} onChange={(e) => updateSubjectMapping(index, 'reported_subject', e.target.value || null)} placeholder="Optional" /></TableCell>
+                          <TableCell>
                             {mapping.id && (
-                              <button
-                                onClick={() => handleDeleteSubjectMapping(mapping.id!)}
-                                className="p-2 text-red-400 hover:text-red-300 transition"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteSubjectMapping(mapping.id!)} title="Delete">
+                                <DeleteIcon />
+                              </IconButton>
                             )}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Component Config Tab */}
-          {activeTab === 'component-config' && (
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-white">Assessment Component Configurations</h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleAddComponentConfig}
-                    disabled={!selectedSchoolId}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Row
-                  </button>
-                  <button
-                    onClick={handleSaveComponentConfigs}
-                    disabled={loading || editableConfigs.length === 0}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    <Save className="w-4 h-4" />
-                    Save All
-                  </button>
-                </div>
-              </div>
-
-              {loading && editableConfigs.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">Loading...</div>
-              ) : editableConfigs.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  No component configs found. Select school, then click "Add Row" to create one.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-gray-700">
-                      <tr>
-                        <th className="px-4 py-3 text-gray-300 font-semibold">Component Name</th>
-                        <th className="px-4 py-3 text-gray-300 font-semibold">Active</th>
-                        <th className="px-4 py-3 text-gray-300 font-semibold w-20">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                    </TableBody>
+                  </Table>
+                )}
+              </Box>
+            )}
+            {activeTab === 'component-config' && (
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">Assessment Component Configurations</Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button variant="contained" color="success" onClick={handleAddComponentConfig} disabled={!selectedSchoolId} startIcon={<AddIcon />}>
+                      Add Row
+                    </Button>
+                    <Button variant="contained" onClick={handleSaveComponentConfigs} disabled={loading || editableConfigs.length === 0} startIcon={<SaveIcon />}>
+                      Save All
+                    </Button>
+                  </Box>
+                </Box>
+                {loading && editableConfigs.length === 0 ? (
+                  <Typography color="text.secondary" textAlign="center" py={4}>Loading...</Typography>
+                ) : editableConfigs.length === 0 ? (
+                  <Typography color="text.secondary" textAlign="center" py={4}>
+                    No component configs found. Select school, then click "Add Row" to create one.
+                  </Typography>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Component Name</TableCell>
+                        <TableCell>Active</TableCell>
+                        <TableCell width={80}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                       {editableConfigs.map((config, index) => (
-                        <tr key={config.id || index} className="border-b border-gray-700 hover:bg-gray-700/50">
-                          <td className="px-4 py-3">
-                            <input
-                              type="text"
-                              value={config.component_name}
-                              onChange={(e) => updateComponentConfig(index, 'component_name', e.target.value)}
-                              className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-                              placeholder="e.g., Assignment, Exam, Quiz"
+                        <TableRow key={config.id || index}>
+                          <TableCell><TextField size="small" fullWidth value={config.component_name} onChange={(e) => updateComponentConfig(index, 'component_name', e.target.value)} placeholder="e.g., Assignment, Exam" /></TableCell>
+                          <TableCell>
+                            <FormControlLabel
+                              control={<Checkbox checked={config.is_active} onChange={(e) => updateComponentConfig(index, 'is_active', e.target.checked)} />}
+                              label="Active"
                             />
-                          </td>
-                          <td className="px-4 py-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={config.is_active}
-                                onChange={(e) => updateComponentConfig(index, 'is_active', e.target.checked)}
-                                className="w-4 h-4 rounded bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span className="text-sm text-gray-300">Active</span>
-                            </label>
-                          </td>
-                          <td className="px-4 py-3">
+                          </TableCell>
+                          <TableCell>
                             {config.id && (
-                              <button
-                                onClick={() => handleDeleteComponentConfig(config.id!)}
-                                className="p-2 text-red-400 hover:text-red-300 transition"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteComponentConfig(config.id!)} title="Delete">
+                                <DeleteIcon />
+                              </IconButton>
                             )}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                    </TableBody>
+                  </Table>
+                )}
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </Box>
+    </Box>
   );
 }

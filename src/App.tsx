@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
 import Dashboard from './pages/Dashboard';
-import Analytics from './pages/Analytics';
 import EFUpload from './pages/EFUpload';
 import NexquareConfig from './pages/NexquareConfig';
 import ManageBacConfig from './pages/ManageBacConfig';
 import NexquareDataSync from './pages/NexquareDataSync';
 import ManageBacDataSync from './pages/ManageBacDataSync';
 import RPConfig from './pages/RPConfig';
-import SupersetDashboards from './pages/SupersetDashboards';
-import AKSDashboard from './pages/AKSDashboard';
 import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
 import UserManagement from './pages/UserManagement';
@@ -18,6 +19,7 @@ import NodeManagement from './pages/NodeManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
 import SchoolAssignment from './pages/SchoolAssignment';
 import ProtectedRoute from './components/ProtectedRoute';
+import PageLayout from './components/PageLayout';
 
 function App() {
   const [healthStatus, setHealthStatus] = useState<'checking' | 'healthy' | 'unhealthy'>('checking');
@@ -45,19 +47,38 @@ function App() {
 
   if (healthStatus === 'checking') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-white text-xl">Checking API connection...</div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <CircularProgress color="primary" />
+          <Typography color="text.primary">Checking API connection...</Typography>
+        </Box>
+      </Box>
     );
   }
 
   if (healthStatus === 'unhealthy') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-red-500 text-xl">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Alert severity="error" sx={{ maxWidth: 500 }}>
           ⚠️ Cannot connect to API server. Please ensure the backend is running and VITE_API_BASE_URL is set correctly.
-        </div>
-      </div>
+        </Alert>
+      </Box>
     );
   }
 
@@ -81,31 +102,9 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analytics"
-          element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/superset"
-          element={
-            <ProtectedRoute>
-              <SupersetDashboards />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/aks-dashboard"
-          element={
-            <ProtectedRoute>
-              <AKSDashboard />
+              <PageLayout>
+                <Dashboard />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -113,7 +112,9 @@ function App() {
           path="/admin/ef-upload"
           element={
             <ProtectedRoute>
-              <EFUpload />
+              <PageLayout>
+                <EFUpload />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -121,7 +122,9 @@ function App() {
           path="/admin/nexquare-config"
           element={
             <ProtectedRoute>
-              <NexquareConfig />
+              <PageLayout>
+                <NexquareConfig />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -129,7 +132,9 @@ function App() {
           path="/admin/managebac-config"
           element={
             <ProtectedRoute>
-              <ManageBacConfig />
+              <PageLayout>
+                <ManageBacConfig />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -137,7 +142,9 @@ function App() {
           path="/admin/rp-config"
           element={
             <ProtectedRoute>
-              <RPConfig />
+              <PageLayout>
+                <RPConfig />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -145,7 +152,9 @@ function App() {
           path="/admin/nexquare-sync"
           element={
             <ProtectedRoute>
-              <NexquareDataSync />
+              <PageLayout>
+                <NexquareDataSync />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -153,7 +162,9 @@ function App() {
           path="/admin/managebac-sync"
           element={
             <ProtectedRoute>
-              <ManageBacDataSync />
+              <PageLayout>
+                <ManageBacDataSync />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -161,7 +172,9 @@ function App() {
           path="/admin/users"
           element={
             <ProtectedRoute>
-              <UserManagement />
+              <PageLayout>
+                <UserManagement />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -169,7 +182,9 @@ function App() {
           path="/admin/access-control"
           element={
             <ProtectedRoute>
-              <AccessControl />
+              <PageLayout>
+                <AccessControl />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -177,7 +192,9 @@ function App() {
           path="/admin/nodes"
           element={
             <ProtectedRoute>
-              <NodeManagement />
+              <PageLayout>
+                <NodeManagement />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -185,7 +202,9 @@ function App() {
           path="/admin/departments"
           element={
             <ProtectedRoute>
-              <DepartmentManagement />
+              <PageLayout>
+                <DepartmentManagement />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -193,7 +212,9 @@ function App() {
           path="/admin/school-assignment"
           element={
             <ProtectedRoute>
-              <SchoolAssignment />
+              <PageLayout>
+                <SchoolAssignment />
+              </PageLayout>
             </ProtectedRoute>
           }
         />
@@ -213,4 +234,3 @@ function App() {
 }
 
 export default App;
-
