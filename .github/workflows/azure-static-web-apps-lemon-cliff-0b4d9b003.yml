@@ -1,45 +1,49 @@
-    # Deploy frontend to Azure Static Web Apps.
-    # The built output (dist/) must be deployed, not the source.
-    # In Azure Portal: set secret AZURE_STATIC_WEB_APPS_API_TOKEN for this repo.
+# Deploy frontend to Azure Static Web Apps.
+# Assumes frontend is at REPO ROOT (e.g. analyticsFE repo). If your app is in a "frontend/" subfolder, set FRONTEND_DIR to "frontend".
+# In Azure Portal: set secret AZURE_STATIC_WEB_APPS_API_TOKEN for this repo.
 
-    name: Azure Static Web Apps - Frontend
+name: Azure Static Web Apps - Frontend
 
-    on:
-      push:
-        branches:
-          - main
-      pull_request:
-        branches:
-          - main
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-    jobs:
-      build_and_deploy:
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v4
+env:
+  # Set to "frontend" if this repo has frontend in a subfolder (e.g. dataanalytics); leave empty if app is at root (e.g. analyticsFE)
+  FRONTEND_DIR: ''
 
-          - name: Setup Node
-            uses: actions/setup-node@v4
-            with:
-              node-version: '20'
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-          - name: Install dependencies
-            working-directory: frontend
-            run: npm ci
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-          - name: Build
-            working-directory: frontend
-            run: npx vite build
-            env:
-              VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://analyticsbe-bdcvd6gsenb8h0hg.westeurope-01.azurewebsites.net' }}
-              VITE_SUPERSET_URL: ${{ vars.VITE_SUPERSET_URL || '' }}
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.FRONTEND_DIR || '.' }}
 
-          - name: Deploy to Azure Static Web Apps
-            uses: azure/static-web-apps-deploy@v1
-            with:
-              azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-              repo_token: ${{ secrets.GITHUB_TOKEN }}
-              action: 'upload'
-              # With skip_app_build, app_location is the folder to deploy (the build output)
-              app_location: 'frontend/dist'
-              skip_app_build: true
+      - name: Build
+        run: npx vite build
+        working-directory: ${{ env.FRONTEND_DIR || '.' }}
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://analyticsbe-bdcvd6gsenb8h0hg.westeurope-01.azurewebsites.net' }}
+          VITE_SUPERSET_URL: ${{ vars.VITE_SUPERSET_URL || '' }}
+
+      - name: Deploy to Azure Static Web Apps
+        uses: azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: 'upload'
+          # Deploy the build output folder (dist). Path is relative to repo root.
+          app_location: ${{ env.FRONTEND_DIR && format('{0}/dist', env.FRONTEND_DIR) || 'dist' }}
+          skip_app_build: true
