@@ -2,9 +2,10 @@
 # Assumes frontend is at REPO ROOT (e.g. analyticsFE repo). If your app is in a "frontend/" subfolder, set FRONTEND_DIR to "frontend".
 #
 # REQUIRED: Add the deployment token as a GitHub Actions secret:
-#   1. Azure Portal → your Static Web App → Overview → "Manage deployment token" → Copy
-#   2. GitHub repo → Settings → Secrets and variables → Actions → New repository secret
+#   1. Azure Portal → the Static Web App that should host THIS repo → Overview → "Manage deployment token" → Copy (no spaces)
+#   2. GitHub repo (analyticsFE) → Settings → Secrets and variables → Actions → New repository secret
 #   3. Name: AZURE_STATIC_WEB_APPS_API_TOKEN   Value: (paste the token)
+#   If you see "No matching Static Web App was found or the api key was invalid", the token is for a different app or invalid.
 
 name: Azure Static Web Apps - Frontend
 
@@ -51,5 +52,3 @@ jobs:
           # Deploy the build output folder (dist). Path is relative to repo root.
           app_location: ${{ env.FRONTEND_DIR && format('{0}/dist', env.FRONTEND_DIR) || 'dist' }}
           skip_app_build: true
-          # Skip deploy (but still run build) when token is not set, e.g. in PRs from forks
-          skip_deploy_on_missing_secrets: true
