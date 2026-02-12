@@ -20,6 +20,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
+import Autocomplete from '@mui/material/Autocomplete';
 import IconButton from '@mui/material/IconButton';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AddIcon from '@mui/icons-material/Add';
@@ -53,6 +54,7 @@ export default function RPConfig() {
   const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('');
   const [schools, setSchools] = useState<School[]>([]);
   const [academicYears, setAcademicYears] = useState<string[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
   const [, setSubjectMappings] = useState<SubjectMapping[]>([]);
   const [, setComponentConfigs] = useState<AssessmentComponentConfig[]>([]);
   const [editableMappings, setEditableMappings] = useState<SubjectMapping[]>([]);
@@ -60,8 +62,18 @@ export default function RPConfig() {
 
   useEffect(() => {
     loadSchools();
-    loadAcademicYears();
   }, []);
+
+  useEffect(() => {
+    if (selectedSchoolId) {
+      loadAcademicYears(selectedSchoolId);
+      loadSubjects(selectedSchoolId);
+    } else {
+      setAcademicYears([]);
+      setSubjects([]);
+      setSelectedAcademicYear('');
+    }
+  }, [selectedSchoolId]);
 
   useEffect(() => {
     if (activeTab === 'subject-mapping' && selectedSchoolId && selectedAcademicYear) {
@@ -87,13 +99,23 @@ export default function RPConfig() {
     }
   };
 
-  const loadAcademicYears = async () => {
+  const loadAcademicYears = async (schoolId: string) => {
     try {
-      const data = await rpConfigService.getAcademicYears();
+      const data = await rpConfigService.getAcademicYears(schoolId);
       setAcademicYears(data);
     } catch (error: any) {
       showToast('Failed to load academic years', 'error');
       console.error('Error loading academic years:', error);
+    }
+  };
+
+  const loadSubjects = async (schoolId: string) => {
+    try {
+      const data = await rpConfigService.getSubjects(schoolId);
+      setSubjects(data);
+    } catch (error: any) {
+      showToast('Failed to load subjects', 'error');
+      console.error('Error loading subjects:', error);
     }
   };
 
@@ -230,7 +252,9 @@ export default function RPConfig() {
             <SettingsIcon />
             RP Configuration Management
           </Typography>
-          <Typography color="text.secondary">Manage subject mappings and assessment component configurations</Typography>
+          <Typography color="text.secondary">
+            Manage subject mappings and assessment component configurations. Schools and academic years come from Nexquare (Get Schools &amp; Student Allocations).
+          </Typography>
         </Box>
 
         <Snackbar open={toasts.length > 0} anchorOrigin={{ vertical: 'top', horizontal: 'right' }} sx={{ mt: 6 }}>
@@ -266,6 +290,11 @@ export default function RPConfig() {
                       <MenuItem key={year} value={year}>{year}</MenuItem>
                     ))}
                   </Select>
+                  {selectedSchoolId && academicYears.length === 0 && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                      No years found. Run Student Allocations for this school in Nexquare Data Sync.
+                    </Typography>
+                  )}
                 </FormControl>
               )}
               <Button
@@ -319,7 +348,19 @@ export default function RPConfig() {
                       {editableMappings.map((mapping, index) => (
                         <TableRow key={mapping.id || index}>
                           <TableCell><TextField size="small" fullWidth value={mapping.grade} onChange={(e) => updateSubjectMapping(index, 'grade', e.target.value)} placeholder="e.g., 10, 12" /></TableCell>
-                          <TableCell><TextField size="small" fullWidth value={mapping.subject} onChange={(e) => updateSubjectMapping(index, 'subject', e.target.value)} placeholder="e.g., Maths" /></TableCell>
+                          <TableCell>
+                            <Autocomplete
+                              freeSolo
+                              size="small"
+                              options={subjects}
+                              value={mapping.subject}
+                              onChange={(_e, v) => updateSubjectMapping(index, 'subject', typeof v === 'string' ? v : (v ?? ''))}
+                              onInputChange={(_e, v) => updateSubjectMapping(index, 'subject', v)}
+                              renderInput={(params) => (
+                                <TextField {...params} placeholder="Select or type subject" />
+                              )}
+                            />
+                          </TableCell>
                           <TableCell><TextField size="small" fullWidth value={mapping.reported_subject || ''} onChange={(e) => updateSubjectMapping(index, 'reported_subject', e.target.value || null)} placeholder="Optional" /></TableCell>
                           <TableCell>
                             {mapping.id && (

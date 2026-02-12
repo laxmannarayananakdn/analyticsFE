@@ -346,7 +346,7 @@ export default function NexquareConfig() {
               ) : (
                 <Box sx={{ maxHeight: 'calc(100vh - 300px)', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {configs.map((config) => (
-                    <Card key={config.id} variant="outlined" sx={{ bgcolor: config.is_active ? 'action.hover' : 'action.selected' }}>
+                    <Card key={config.id} variant="outlined" sx={{ flexShrink: 0, bgcolor: config.is_active ? 'action.hover' : 'action.selected' }}>
                       <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                           <Box>
@@ -366,18 +366,12 @@ export default function NexquareConfig() {
                             <IconButton size="small" color="error" onClick={() => setShowDeleteConfirm(config.id!)} title="Delete"><DeleteIcon /></IconButton>
                           </Box>
                         </Box>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, typography: 'body2' }}>
+                        <Box sx={{ typography: 'body2' }}>
                           <Box><Typography component="span" color="text.secondary">Domain:</Typography> <Typography component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{config.domain_url}</Typography></Box>
-                          <Box><Typography component="span" color="text.secondary">Client ID:</Typography> <Typography component="span" fontFamily="monospace" fontSize="0.75rem">{config.client_id}</Typography></Box>
+                          <Box><Typography component="span" color="text.secondary">Client ID:</Typography> <Typography component="span" fontFamily="monospace">{config.client_id}</Typography></Box>
                           <Box><Typography component="span" color="text.secondary">Client Secret:</Typography> <Typography component="span" fontFamily="monospace">{'*'.repeat(20)}</Typography></Box>
-                          {config.notes && (
-                            <Box sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                              <Typography variant="caption" color="text.secondary">{config.notes}</Typography>
-                            </Box>
-                          )}
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                            Updated: {formatDate(config.updated_at)}
-                          </Typography>
+                          {config.notes && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>{config.notes}</Typography>}
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>Updated: {formatDate(config.updated_at)}</Typography>
                         </Box>
                       </CardContent>
                     </Card>

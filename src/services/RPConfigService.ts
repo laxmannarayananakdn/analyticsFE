@@ -50,10 +50,20 @@ class RPConfigService {
   }
 
   /**
-   * Get academic years list
+   * Get academic years list (from NEX.student_allocations).
+   * @param schoolId - optional; when provided, returns only years for that school
    */
-  async getAcademicYears(): Promise<string[]> {
-    const response = await apiClient.get<{ success: boolean; data: string[] }>('/api/rp-config/academic-years');
+  async getAcademicYears(schoolId?: string): Promise<string[]> {
+    const params = schoolId ? { school_id: schoolId } : undefined;
+    const response = await apiClient.get<{ success: boolean; data: string[] }>('/api/rp-config/academic-years', params);
+    return response.data;
+  }
+
+  /**
+   * Get subject names for a school (from NEX.subjects - populated by Student Allocations).
+   */
+  async getSubjects(schoolId: string): Promise<string[]> {
+    const response = await apiClient.get<{ success: boolean; data: string[] }>('/api/rp-config/subjects', { school_id: schoolId });
     return response.data;
   }
 

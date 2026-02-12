@@ -241,7 +241,7 @@ export default function ManageBacConfig() {
               ) : (
                 <Box sx={{ maxHeight: 'calc(100vh - 300px)', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {configs.map((config) => (
-                    <Card key={config.id} variant="outlined" sx={{ bgcolor: config.is_active ? 'action.hover' : 'action.selected' }}>
+                    <Card key={config.id} variant="outlined" sx={{ flexShrink: 0, bgcolor: config.is_active ? 'action.hover' : 'action.selected' }}>
                       <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                           <Box>
