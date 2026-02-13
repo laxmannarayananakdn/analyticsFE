@@ -10,15 +10,15 @@ import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import { authService } from '../services/AuthService';
 import { getTenantConfigForLogin } from '../services/MicrosoftTenantConfigService';
-import { PublicClientApplication } from '@azure/msal-browser';
 
 export default function Login() {
   const location = useLocation();
   const navigate = useNavigate();
   const message = (location.state as { message?: string })?.message;
+  const errorParam = new URLSearchParams(location.search).get('error');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(errorParam ? decodeURIComponent(errorParam) : null);
   const [loading, setLoading] = useState(false);
   const [msLoading, setMsLoading] = useState(false);
   const [microsoftAvailable, setMicrosoftAvailable] = useState<{
@@ -82,34 +82,10 @@ export default function Login() {
     setError(null);
     setMsLoading(true);
     try {
-      const redirectUri = `${window.location.origin}/auth/callback`;
-      const msalConfig = {
-        auth: {
-          clientId: microsoftAvailable.clientId,
-          authority: microsoftAvailable.authority,
-          redirectUri,
-          postLogoutRedirectUri: window.location.origin,
-        },
-      };
-      // Store config for when we return from Microsoft (same-tab redirect flow)
-      const storedConfig = { clientId: microsoftAvailable.clientId, authority: microsoftAvailable.authority };
-      localStorage.setItem('msal_tenant_config', JSON.stringify(storedConfig));
-      console.log('[MSAL] Initiating redirect to Microsoft', { redirectUri, authority: storedConfig.authority });
-      const msal = new PublicClientApplication(msalConfig);
-      await msal.initialize();
-
-      // Redirect flow: navigate to Microsoft in same tab (no popup)
-      await msal.loginRedirect({
-        scopes: ['openid', 'profile', 'email'],
-        loginHint: emailVal,
-      });
-      // Page navigates away - code below runs only if redirect doesn't happen (e.g. already logged in)
-    } catch (err: any) {
-      if (err.message?.includes('user_cancelled') || err.name === 'BrowserAuthError') {
-        setError('Microsoft sign-in was cancelled');
-      } else {
-        setError(err.response?.data?.error || err.message || 'Microsoft sign-in failed');
-      }
+      const domain = emailVal.split('@')[1]?.toLowerCase().trim() || '';
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const authUrl = `${apiBase}/api/auth/microsoft/authorize?domain=${encodeURIComponent(domain)}&login_hint=${encodeURIComponent(emailVal)}`;
+      window.location.href = authUrl;
     } finally {
       setMsLoading(false);
     }
