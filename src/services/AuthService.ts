@@ -215,9 +215,16 @@ class AuthService {
 
   /**
    * Update user (admin only)
+   * When switching authType to Password, returns temporaryPassword.
    */
-  async updateUser(email: string, data: { displayName?: string; isActive?: boolean }): Promise<User> {
-    return apiClient.put<User>(`/api/users/${encodeURIComponent(email)}`, data);
+  async updateUser(
+    email: string,
+    data: { displayName?: string; isActive?: boolean; authType?: 'AppRegistration' | 'Password' }
+  ): Promise<{ user: User; temporaryPassword?: string }> {
+    return apiClient.put<{ user: User; temporaryPassword?: string }>(
+      `/api/users/${encodeURIComponent(email)}`,
+      data
+    );
   }
 
   /**
