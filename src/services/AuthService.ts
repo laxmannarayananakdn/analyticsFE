@@ -108,10 +108,12 @@ class AuthService {
    * User must be pre-added with Auth_Type = AppRegistration
    */
   async loginWithMicrosoft(email: string, oauthToken: string): Promise<LoginResponse> {
+    console.log('[Auth] loginWithMicrosoft called', { email, tokenLength: oauthToken?.length });
     const response = await apiClient.post<LoginResponse>('/api/auth/login', {
       email,
       oauthToken,
     });
+    console.log('[Auth] loginWithMicrosoft response', { hasToken: !!response?.token });
 
     if (response.token) {
       this.setToken(response.token);

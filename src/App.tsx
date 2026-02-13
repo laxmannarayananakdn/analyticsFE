@@ -32,15 +32,38 @@ const MSAL_REDIRECT_STORAGE_KEY = 'msal_tenant_config';
 function AppContent() {
   const navigate = useNavigate();
   const [healthStatus, setHealthStatus] = useState<'checking' | 'healthy' | 'unhealthy'>('checking');
-  const [handlingMsalRedirect, setHandlingMsalRedirect] = useState(false);
+
+  useEffect(() => {
+    console.log('[App] Load', { url: window.location.href });
+  }, []);
+  // Must be true on FIRST render when we have auth params, else Router will redirect to /login and we lose the params
+  const [handlingMsalRedirect, setHandlingMsalRedirect] = useState(() => {
+    const stored = localStorage.getItem(MSAL_REDIRECT_STORAGE_KEY);
+    const hasAuthParams = !!(
+      window.location.hash ||
+      window.location.search.includes('code=') ||
+      window.location.search.includes('state=')
+    );
+    if (stored && hasAuthParams) {
+      console.log('[MSAL] Detected return from Microsoft on initial load', { url: window.location.href });
+      return true;
+    }
+    return false;
+  });
 
   // Handle MSAL redirect: when we return from Microsoft login (same tab), process the auth and complete login
   useEffect(() => {
     const stored = localStorage.getItem(MSAL_REDIRECT_STORAGE_KEY);
-    const hasAuthParams = window.location.hash || window.location.search.includes('code=') || window.location.search.includes('state=');
+    const hasAuthParams = !!(
+      window.location.hash ||
+      window.location.search.includes('code=') ||
+      window.location.search.includes('state=')
+    );
+    console.log('[MSAL] Redirect handler effect', { stored: !!stored, hasAuthParams, url: window.location.href });
     if (!stored || !hasAuthParams) return;
 
     const config = JSON.parse(stored) as { clientId: string; authority: string };
+    console.log('[MSAL] Processing redirect with config', { clientId: config.clientId?.slice(0, 8) + '...' });
     setHandlingMsalRedirect(true);
 
     const msal = new PublicClientApplication({
@@ -54,22 +77,38 @@ function AppContent() {
 
     msal
       .initialize()
-      .then(() => msal.handleRedirectPromise())
+      .then(() => {
+        console.log('[MSAL] Instance ready, calling handleRedirectPromise');
+        return msal.handleRedirectPromise();
+      })
       .then(async (result) => {
         localStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
         setHandlingMsalRedirect(false);
+        console.log('[MSAL] handleRedirectPromise result', {
+          hasResult: !!result,
+          hasIdToken: !!result?.idToken,
+          username: result?.account?.username,
+        });
         if (result?.idToken && result?.account?.username) {
           try {
+            console.log('[MSAL] Calling backend loginWithMicrosoft for', result.account.username);
             const { authService } = await import('./services/AuthService');
             await authService.loginWithMicrosoft(result.account.username, result.idToken);
+            console.log('[MSAL] Backend login success, navigating to dashboard');
             navigate('/dashboard', { replace: true });
           } catch (err: any) {
-            console.error('Microsoft login failed:', err);
+            console.error('[MSAL] Backend login failed:', {
+              status: err?.response?.status,
+              data: err?.response?.data,
+              message: err?.message,
+            });
           }
+        } else {
+          console.warn('[MSAL] No idToken or username in result');
         }
       })
       .catch((err) => {
-        console.error('MSAL redirect handling failed:', err);
+        console.error('[MSAL] Redirect handling failed:', err);
         localStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
         setHandlingMsalRedirect(false);
       });

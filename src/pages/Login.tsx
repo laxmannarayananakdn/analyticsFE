@@ -91,7 +91,12 @@ export default function Login() {
         },
       };
       // Store config for when we return from Microsoft (same-tab redirect flow)
-      localStorage.setItem('msal_tenant_config', JSON.stringify({ clientId: microsoftAvailable.clientId, authority: microsoftAvailable.authority }));
+      const storedConfig = { clientId: microsoftAvailable.clientId, authority: microsoftAvailable.authority };
+      localStorage.setItem('msal_tenant_config', JSON.stringify(storedConfig));
+      console.log('[MSAL] Initiating redirect to Microsoft', {
+        redirectUri: window.location.origin,
+        authority: storedConfig.authority,
+      });
       const msal = new PublicClientApplication(msalConfig);
       await msal.initialize();
 

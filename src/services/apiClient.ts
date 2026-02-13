@@ -44,6 +44,7 @@ class ApiClient {
       (error: AxiosError) => {
         // Handle 401 Unauthorized - clear token and redirect to login
         if (error.response?.status === 401) {
+          console.error('[API] 401 Unauthorized - redirecting to login', error.response?.data);
           localStorage.removeItem('auth_token');
           // Redirect to login page if not already there
           if (window.location.pathname !== '/login') {
