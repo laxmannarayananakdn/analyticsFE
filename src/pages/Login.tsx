@@ -7,8 +7,11 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
+import Divider from '@mui/material/Divider';
 import { authService } from '../services/AuthService';
+import { getTenantConfigForLogin } from '../services/MicrosoftTenantConfigService';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import { PublicClientApplication } from '@azure/msal-browser';
 
 export default function Login() {
   const location = useLocation();
@@ -18,6 +21,12 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [msLoading, setMsLoading] = useState(false);
+  const [microsoftAvailable, setMicrosoftAvailable] = useState<{
+    clientId: string;
+    authority: string;
+    displayName: string | null;
+  } | null>(null);
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -25,6 +34,21 @@ export default function Login() {
       navigate('/dashboard', { replace: true });
     }
   }, [navigate]);
+
+  // Check if Microsoft login is available for the entered email domain (debounced)
+  useEffect(() => {
+    const domain = email.split('@')[1]?.toLowerCase().trim();
+    if (!domain) {
+      setMicrosoftAvailable(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      getTenantConfigForLogin(domain)
+        .then((config) => setMicrosoftAvailable(config))
+        .catch(() => setMicrosoftAvailable(null));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +66,55 @@ export default function Login() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMicrosoftLogin = async () => {
+    const emailVal = email.trim();
+    if (!emailVal) {
+      setError('Please enter your email first');
+      return;
+    }
+    if (!microsoftAvailable) {
+      setError('Microsoft login is not configured for your organization. Please sign in with password.');
+      return;
+    }
+
+    setError(null);
+    setMsLoading(true);
+    try {
+      const msalConfig = {
+        auth: {
+          clientId: microsoftAvailable.clientId,
+          authority: microsoftAvailable.authority,
+          redirectUri: window.location.origin,
+          postLogoutRedirectUri: window.location.origin,
+        },
+      };
+      const msal = new PublicClientApplication(msalConfig);
+      await msal.initialize();
+
+      const result = await msal.loginPopup({
+        scopes: ['openid', 'profile', 'email'],
+        loginHint: emailVal,
+      });
+
+      const idToken = result.idToken;
+      if (!idToken) {
+        setError('No token received from Microsoft');
+        return;
+      }
+
+      await authService.loginWithMicrosoft(emailVal, idToken);
+      navigate('/dashboard');
+    } catch (err: any) {
+      if (err.message?.includes('user_cancelled') || err.name === 'BrowserAuthError') {
+        setError('Microsoft sign-in was cancelled');
+      } else {
+        setError(err.response?.data?.error || err.message || 'Microsoft sign-in failed');
+      }
+    } finally {
+      setMsLoading(false);
     }
   };
 
@@ -76,16 +149,33 @@ export default function Login() {
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+          <TextField
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            fullWidth
+            placeholder="user@example.com"
+            sx={{ mb: 2 }}
+          />
+
+          {microsoftAvailable && (
+            <Button
+              variant="outlined"
               fullWidth
-              placeholder="user@example.com"
-            />
+              disabled={msLoading}
+              size="large"
+              onClick={handleMicrosoftLogin}
+              sx={{ mb: 2 }}
+            >
+              {msLoading ? 'Signing in...' : 'Sign in with Microsoft'}
+            </Button>
+          )}
+
+          <Divider sx={{ my: 2 }}>or</Divider>
+
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="Password"
               type="password"
@@ -96,7 +186,7 @@ export default function Login() {
               placeholder="Enter your password"
             />
             <Button type="submit" variant="contained" fullWidth disabled={loading} size="large">
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Logging in...' : 'Login with Password'}
             </Button>
           </Box>
         </CardContent>

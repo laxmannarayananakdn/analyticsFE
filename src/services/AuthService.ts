@@ -95,11 +95,28 @@ class AuthService {
       email,
       password,
     });
-    
+
     if (response.token) {
       this.setToken(response.token);
     }
-    
+
+    return response;
+  }
+
+  /**
+   * Login with Microsoft OAuth token
+   * User must be pre-added with Auth_Type = AppRegistration
+   */
+  async loginWithMicrosoft(email: string, oauthToken: string): Promise<LoginResponse> {
+    const response = await apiClient.post<LoginResponse>('/api/auth/login', {
+      email,
+      oauthToken,
+    });
+
+    if (response.token) {
+      this.setToken(response.token);
+    }
+
     return response;
   }
 

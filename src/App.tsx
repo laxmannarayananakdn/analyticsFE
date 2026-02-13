@@ -16,6 +16,7 @@ import ChangePassword from './pages/ChangePassword';
 import UserManagement from './pages/UserManagement';
 import AccessControl from './pages/AccessControl';
 import AccessGroupsManagement from './pages/AccessGroupsManagement';
+import MicrosoftTenantConfig from './pages/MicrosoftTenantConfig';
 import NodeManagement from './pages/NodeManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
 import SchoolAssignment from './pages/SchoolAssignment';
@@ -227,6 +228,16 @@ function App() {
             <ProtectedRoute>
               <PageLayout>
                 <AccessGroupsManagement />
+              </PageLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/microsoft-tenant-config"
+          element={
+            <ProtectedRoute>
+              <PageLayout>
+                <MicrosoftTenantConfig />
               </PageLayout>
             </ProtectedRoute>
           }

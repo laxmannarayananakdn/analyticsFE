@@ -19,6 +19,7 @@ import SyncIcon from '@mui/icons-material/Sync';
 import PeopleIcon from '@mui/icons-material/People';
 import GroupIcon from '@mui/icons-material/Group';
 import ShieldIcon from '@mui/icons-material/Shield';
+import CloudIcon from '@mui/icons-material/Cloud';
 import BusinessIcon from '@mui/icons-material/Business';
 import WorkIcon from '@mui/icons-material/Work';
 import SchoolIcon from '@mui/icons-material/School';
@@ -48,6 +49,7 @@ const navItems: { to: string; label: string; icon: React.ReactNode }[] = [
   { to: '/admin/users', label: 'User Management', icon: <PeopleIcon /> },
   { to: '/admin/access-control', label: 'Access Control', icon: <ShieldIcon /> },
   { to: '/admin/access-groups', label: 'Access Groups', icon: <GroupIcon /> },
+  { to: '/admin/microsoft-tenant-config', label: 'Microsoft Tenant Config', icon: <CloudIcon /> },
   { to: '/admin/nodes', label: 'Node Management', icon: <BusinessIcon /> },
   { to: '/admin/departments', label: 'Department Management', icon: <WorkIcon /> },
   { to: '/admin/school-assignment', label: 'School Assignment', icon: <SchoolIcon /> },
