@@ -90,6 +90,8 @@ export default function Login() {
           postLogoutRedirectUri: window.location.origin,
         },
       };
+      // Store config so popup can process redirect when it loads our app
+      sessionStorage.setItem('msal_tenant_config', JSON.stringify({ clientId: microsoftAvailable.clientId, authority: microsoftAvailable.authority }));
       const msal = new PublicClientApplication(msalConfig);
       await msal.initialize();
 
@@ -105,6 +107,7 @@ export default function Login() {
       }
 
       await authService.loginWithMicrosoft(emailVal, idToken);
+      sessionStorage.removeItem('msal_tenant_config');
       navigate('/dashboard');
     } catch (err: any) {
       if (err.message?.includes('user_cancelled') || err.name === 'BrowserAuthError') {

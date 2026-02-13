@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { PublicClientApplication } from '@azure/msal-browser';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -26,8 +27,40 @@ import SupersetConfig from './pages/SupersetConfig';
 import ProtectedRoute from './components/ProtectedRoute';
 import PageLayout from './components/PageLayout';
 
+const MSAL_REDIRECT_STORAGE_KEY = 'msal_tenant_config';
+
 function App() {
   const [healthStatus, setHealthStatus] = useState<'checking' | 'healthy' | 'unhealthy'>('checking');
+  const [handlingMsalRedirect, setHandlingMsalRedirect] = useState(false);
+
+  // Handle MSAL popup redirect: when popup loads after Microsoft auth, process it so the popup closes
+  useEffect(() => {
+    const stored = sessionStorage.getItem(MSAL_REDIRECT_STORAGE_KEY);
+    if (!window.opener || !stored) return;
+
+    const config = JSON.parse(stored) as { clientId: string; authority: string };
+    setHandlingMsalRedirect(true);
+
+    const msal = new PublicClientApplication({
+      auth: {
+        clientId: config.clientId,
+        authority: config.authority,
+        redirectUri: window.location.origin,
+        postLogoutRedirectUri: window.location.origin,
+      },
+    });
+
+    msal.initialize().then(() => msal.handleRedirectPromise()).then((result) => {
+      sessionStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
+      setHandlingMsalRedirect(false);
+      if (result) {
+        window.close();
+      }
+    }).catch(() => {
+      sessionStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
+      setHandlingMsalRedirect(false);
+    });
+  }, []);
 
   useEffect(() => {
     // Check API health on mount (uses same base URL as rest of app)
@@ -49,6 +82,17 @@ function App() {
 
     checkHealth();
   }, []);
+
+  if (handlingMsalRedirect) {
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <CircularProgress color="primary" />
+          <Typography color="text.primary">Completing Microsoft sign in...</Typography>
+        </Box>
+      </Box>
+    );
+  }
 
   if (healthStatus === 'checking') {
     return (
