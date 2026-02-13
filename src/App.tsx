@@ -34,8 +34,9 @@ function App() {
   const [handlingMsalRedirect, setHandlingMsalRedirect] = useState(false);
 
   // Handle MSAL popup redirect: when popup loads after Microsoft auth, process it so the popup closes
+  // Use localStorage (not sessionStorage) - sessionStorage is per-tab; the popup has its own and can't see parent's
   useEffect(() => {
-    const stored = sessionStorage.getItem(MSAL_REDIRECT_STORAGE_KEY);
+    const stored = localStorage.getItem(MSAL_REDIRECT_STORAGE_KEY);
     if (!window.opener || !stored) return;
 
     const config = JSON.parse(stored) as { clientId: string; authority: string };
@@ -51,13 +52,13 @@ function App() {
     });
 
     msal.initialize().then(() => msal.handleRedirectPromise()).then((result) => {
-      sessionStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
+      localStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
       setHandlingMsalRedirect(false);
       if (result) {
         window.close();
       }
     }).catch(() => {
-      sessionStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
+      localStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
       setHandlingMsalRedirect(false);
     });
   }, []);
