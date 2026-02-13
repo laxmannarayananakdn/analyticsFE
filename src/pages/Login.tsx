@@ -90,25 +90,17 @@ export default function Login() {
           postLogoutRedirectUri: window.location.origin,
         },
       };
-      // Store config so popup can process redirect - localStorage is shared across windows (popup can read it)
+      // Store config for when we return from Microsoft (same-tab redirect flow)
       localStorage.setItem('msal_tenant_config', JSON.stringify({ clientId: microsoftAvailable.clientId, authority: microsoftAvailable.authority }));
       const msal = new PublicClientApplication(msalConfig);
       await msal.initialize();
 
-      const result = await msal.loginPopup({
+      // Redirect flow: navigate to Microsoft in same tab (no popup)
+      await msal.loginRedirect({
         scopes: ['openid', 'profile', 'email'],
         loginHint: emailVal,
       });
-
-      const idToken = result.idToken;
-      if (!idToken) {
-        setError('No token received from Microsoft');
-        return;
-      }
-
-      await authService.loginWithMicrosoft(emailVal, idToken);
-      localStorage.removeItem('msal_tenant_config');
-      navigate('/dashboard');
+      // Page navigates away - code below runs only if redirect doesn't happen (e.g. already logged in)
     } catch (err: any) {
       if (err.message?.includes('user_cancelled') || err.name === 'BrowserAuthError') {
         setError('Microsoft sign-in was cancelled');

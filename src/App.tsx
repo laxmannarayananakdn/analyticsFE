@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { PublicClientApplication } from '@azure/msal-browser';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -29,15 +29,16 @@ import PageLayout from './components/PageLayout';
 
 const MSAL_REDIRECT_STORAGE_KEY = 'msal_tenant_config';
 
-function App() {
+function AppContent() {
+  const navigate = useNavigate();
   const [healthStatus, setHealthStatus] = useState<'checking' | 'healthy' | 'unhealthy'>('checking');
   const [handlingMsalRedirect, setHandlingMsalRedirect] = useState(false);
 
-  // Handle MSAL popup redirect: when popup loads after Microsoft auth, process it so the popup closes
-  // Use localStorage (not sessionStorage) - sessionStorage is per-tab; the popup has its own and can't see parent's
+  // Handle MSAL redirect: when we return from Microsoft login (same tab), process the auth and complete login
   useEffect(() => {
     const stored = localStorage.getItem(MSAL_REDIRECT_STORAGE_KEY);
-    if (!window.opener || !stored) return;
+    const hasAuthParams = window.location.hash || window.location.search.includes('code=') || window.location.search.includes('state=');
+    if (!stored || !hasAuthParams) return;
 
     const config = JSON.parse(stored) as { clientId: string; authority: string };
     setHandlingMsalRedirect(true);
@@ -51,17 +52,28 @@ function App() {
       },
     });
 
-    msal.initialize().then(() => msal.handleRedirectPromise()).then((result) => {
-      localStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
-      setHandlingMsalRedirect(false);
-      if (result) {
-        window.close();
-      }
-    }).catch(() => {
-      localStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
-      setHandlingMsalRedirect(false);
-    });
-  }, []);
+    msal
+      .initialize()
+      .then(() => msal.handleRedirectPromise())
+      .then(async (result) => {
+        localStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
+        setHandlingMsalRedirect(false);
+        if (result?.idToken && result?.account?.username) {
+          try {
+            const { authService } = await import('./services/AuthService');
+            await authService.loginWithMicrosoft(result.account.username, result.idToken);
+            navigate('/dashboard', { replace: true });
+          } catch (err: any) {
+            console.error('Microsoft login failed:', err);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('MSAL redirect handling failed:', err);
+        localStorage.removeItem(MSAL_REDIRECT_STORAGE_KEY);
+        setHandlingMsalRedirect(false);
+      });
+  }, [navigate]);
 
   useEffect(() => {
     // Check API health on mount (uses same base URL as rest of app)
@@ -133,8 +145,7 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
+    <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/change-password" element={<ChangePassword />} />
@@ -339,6 +350,13 @@ function App() {
           }
         />
       </Routes>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
