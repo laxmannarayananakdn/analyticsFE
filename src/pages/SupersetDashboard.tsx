@@ -61,7 +61,12 @@ export default function SupersetDashboard() {
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to get token: ${response.statusText}`);
+          const errData = await response.json().catch(() => ({}));
+          if (response.status === 403 && errData?.code === 'SUPERSET_ACCESS_DENIED') {
+            const email = errData?.userEmail || 'unknown';
+            throw new Error(`User ${email} does not have access to this dashboard.`);
+          }
+          throw new Error(errData?.error || `Failed to get token: ${response.statusText}`);
         }
 
         const { token } = await response.json();
