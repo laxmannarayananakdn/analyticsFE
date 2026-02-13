@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -28,7 +29,13 @@ import { authService, User } from '../services/AuthService';
 
 const PASSWORD_RULES = 'At least 8 characters, with uppercase, lowercase, number, and special character.';
 
+interface SupersetRole {
+  id: number;
+  name: string;
+}
+
 export default function UserManagement() {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,12 +45,21 @@ export default function UserManagement() {
   const [createDisplayName, setCreateDisplayName] = useState('');
   const [createAuthType, setCreateAuthType] = useState<'Password' | 'AppRegistration'>('Password');
   const [createPassword, setCreatePassword] = useState('');
+  const [createSupersetRoleIds, setCreateSupersetRoleIds] = useState<number[]>([]);
+  const [supersetRoles, setSupersetRoles] = useState<SupersetRole[]>([]);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
   const [createdTempPassword, setCreatedTempPassword] = useState<string | null>(null);
+  const [createdUserEmail, setCreatedUserEmail] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => { loadUsers(); }, []);
+
+  useEffect(() => {
+    if (showCreateModal && supersetRoles.length === 0) {
+      authService.getSupersetRoles().then(setSupersetRoles).catch(() => setSupersetRoles([]));
+    }
+  }, [showCreateModal]);
 
   const loadUsers = async () => {
     try {
@@ -73,8 +89,10 @@ export default function UserManagement() {
     setCreateDisplayName('');
     setCreateAuthType('Password');
     setCreatePassword('');
+    setCreateSupersetRoleIds([]);
     setCreateError(null);
     setCreatedTempPassword(null);
+    setCreatedUserEmail(null);
     setCopied(false);
     setShowCreateModal(false);
   };
@@ -83,18 +101,22 @@ export default function UserManagement() {
     e.preventDefault();
     setCreateError(null);
     setCreateLoading(true);
+    const email = createEmail.trim();
     try {
       const result = await authService.createUser({
-        email: createEmail.trim(),
+        email,
         displayName: createDisplayName.trim() || undefined,
         authType: createAuthType,
         password: createAuthType === 'Password' && createPassword ? createPassword : undefined,
+        supersetRoleIds: createSupersetRoleIds.length > 0 ? createSupersetRoleIds : undefined,
       });
+      setCreatedUserEmail(email);
       if (result.temporaryPassword) {
         setCreatedTempPassword(result.temporaryPassword);
       } else {
         resetCreateModal();
         loadUsers();
+        navigate(`/admin/access-control?user=${encodeURIComponent(email)}`);
       }
     } catch (err: any) {
       setCreateError(err.response?.data?.error || 'Failed to create user');
@@ -115,8 +137,12 @@ export default function UserManagement() {
   };
 
   const handleDoneWithTempPassword = () => {
+    const email = createdUserEmail;
     resetCreateModal();
     loadUsers();
+    if (email) {
+      navigate(`/admin/access-control?user=${encodeURIComponent(email)}`);
+    }
   };
 
   if (loading) {
@@ -212,6 +238,30 @@ export default function UserManagement() {
                     <TextField label="Password (optional)" type="password" value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} fullWidth placeholder="Leave empty to generate temporary password" helperText={PASSWORD_RULES} />
                     <Typography variant="caption" color="warning.main">If left empty, a temporary password is generated.</Typography>
                   </>
+                )}
+                {supersetRoles.length > 0 && (
+                  <FormControl fullWidth>
+                    <InputLabel>Superset roles</InputLabel>
+                    <Select
+                      multiple
+                      value={createSupersetRoleIds}
+                      onChange={(e) => setCreateSupersetRoleIds(e.target.value as number[])}
+                      label="Superset roles"
+                      renderValue={(selected) => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {(selected as number[]).map((id) => {
+                            const r = supersetRoles.find((x) => x.id === id);
+                            return <Chip key={id} label={r?.name ?? id} size="small" />;
+                          })}
+                        </Box>
+                      )}
+                    >
+                      {supersetRoles.map((r) => (
+                        <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>
+                      ))}
+                    </Select>
+                    <Typography variant="caption" color="text.secondary">User will be synced to Superset with these roles (embedded dashboards)</Typography>
+                  </FormControl>
                 )}
                 <Box sx={{ display: 'flex', gap: 1, pt: 2 }}>
                   <Button variant="outlined" fullWidth onClick={resetCreateModal}>Cancel</Button>

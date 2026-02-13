@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
 import UserManagement from './pages/UserManagement';
 import AccessControl from './pages/AccessControl';
+import AccessGroupsManagement from './pages/AccessGroupsManagement';
 import NodeManagement from './pages/NodeManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
 import SchoolAssignment from './pages/SchoolAssignment';
@@ -216,6 +217,16 @@ function App() {
             <ProtectedRoute>
               <PageLayout>
                 <AccessControl />
+              </PageLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/access-groups"
+          element={
+            <ProtectedRoute>
+              <PageLayout>
+                <AccessGroupsManagement />
               </PageLayout>
             </ProtectedRoute>
           }

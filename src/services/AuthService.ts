@@ -175,6 +175,13 @@ class AuthService {
   }
 
   /**
+   * Get Superset roles (admin only)
+   */
+  async getSupersetRoles(): Promise<Array<{ id: number; name: string }>> {
+    return apiClient.get<Array<{ id: number; name: string }>>('/api/superset/roles');
+  }
+
+  /**
    * Create user (admin only)
    */
   async createUser(data: {
@@ -182,6 +189,7 @@ class AuthService {
     displayName?: string;
     authType: 'AppRegistration' | 'Password';
     password?: string;
+    supersetRoleIds?: number[];
   }): Promise<{ user: User; temporaryPassword?: string }> {
     return apiClient.post<{ user: User; temporaryPassword?: string }>('/api/users', data);
   }
@@ -306,6 +314,39 @@ class AuthService {
    */
   async revokeNodeAccess(email: string, nodeId: string): Promise<void> {
     await apiClient.delete(`/api/users/${encodeURIComponent(email)}/access/${nodeId}`);
+  }
+
+  async getAccessGroups(): Promise<Array<{ groupId: string; groupName: string; groupDescription: string | null }>> {
+    return apiClient.get('/api/access-groups');
+  }
+
+  async createAccessGroup(data: { groupId: string; groupName: string; groupDescription?: string }): Promise<{ groupId: string; groupName: string; groupDescription: string | null }> {
+    return apiClient.post('/api/access-groups', data);
+  }
+
+  async updateAccessGroup(groupId: string, data: { groupName: string; groupDescription?: string }): Promise<{ groupId: string; groupName: string; groupDescription: string | null }> {
+    return apiClient.put(`/api/access-groups/${encodeURIComponent(groupId)}`, data);
+  }
+
+  async deleteAccessGroup(groupId: string): Promise<void> {
+    return apiClient.delete(`/api/access-groups/${encodeURIComponent(groupId)}`);
+  }
+
+  async getGroupNodeAccess(groupId: string): Promise<Array<{ groupId: string; nodeId: string; departmentId: string }>> {
+    return apiClient.get(`/api/access-groups/${encodeURIComponent(groupId)}/nodes`);
+  }
+
+  async setGroupNodeAccess(groupId: string, nodeAccess: Array<{ nodeId: string; departmentIds: string[] }>): Promise<void> {
+    return apiClient.put(`/api/access-groups/${encodeURIComponent(groupId)}/nodes`, { nodeAccess });
+  }
+
+  async getUserGroups(email: string): Promise<string[]> {
+    const res = await apiClient.get<{ groupIds: string[] }>(`/api/users/${encodeURIComponent(email)}/groups`);
+    return res.groupIds;
+  }
+
+  async setUserGroups(email: string, groupIds: string[]): Promise<void> {
+    return apiClient.put(`/api/users/${encodeURIComponent(email)}/groups`, { groupIds });
   }
 }
 

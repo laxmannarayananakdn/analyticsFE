@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -31,20 +32,34 @@ interface NodeAccess {
 }
 
 export default function AccessControl() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const userFromUrl = searchParams.get('user');
   const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
-  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [groups, setGroups] = useState<Array<{ groupId: string; groupName: string; groupDescription: string | null }>>([]);
+  const [selectedUser, setSelectedUser] = useState<string>(userFromUrl || '');
   const [userAccess, setUserAccess] = useState<UserAccess[]>([]);
+  const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
   const [nodeAccesses, setNodeAccesses] = useState<Record<string, NodeAccess>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    if (userFromUrl && users.some((u) => u.email === userFromUrl)) {
+      setSelectedUser(userFromUrl);
+      setSearchParams((p) => {
+        p.delete('user');
+        return p;
+      }, { replace: true });
+    }
+  }, [userFromUrl, users]);
   useEffect(() => {
     if (selectedUser) loadUserAccess();
-    else { setUserAccess([]); setNodeAccesses({}); }
+    else { setUserAccess([]); setUserGroupIds([]); setNodeAccesses({}); }
   }, [selectedUser]);
   useEffect(() => {
     if (userAccess.length > 0 && nodes.length > 0) {
@@ -73,14 +88,16 @@ export default function AccessControl() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersData, deptsData, nodesData] = await Promise.all([
+      const [usersData, deptsData, nodesData, groupsData] = await Promise.all([
         authService.getUsers(),
         authService.getDepartments(),
         authService.getNodes(false),
+        authService.getAccessGroups().catch(() => []),
       ]);
       setUsers(usersData);
       setDepartments(deptsData.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999)));
       setNodes(nodesData);
+      setGroups(groupsData);
     } catch (err: any) {
       console.error('Failed to load data:', err);
     } finally {
@@ -91,8 +108,12 @@ export default function AccessControl() {
   const loadUserAccess = async () => {
     if (!selectedUser) return;
     try {
-      const access = await authService.getUserAccess(selectedUser);
+      const [access, groupIds] = await Promise.all([
+        authService.getUserAccess(selectedUser),
+        authService.getUserGroups(selectedUser).catch(() => []),
+      ]);
       setUserAccess(access);
+      setUserGroupIds(groupIds);
     } catch (err: any) {
       console.error('Failed to load user access:', err);
     }
@@ -128,6 +149,7 @@ export default function AccessControl() {
         const hasAccess = userAccess.some(ua => ua.nodeId === nodeAccess.nodeId);
         if (hasAccess) await authService.revokeNodeAccess(selectedUser, nodeAccess.nodeId);
       }
+      await authService.setUserGroups(selectedUser, userGroupIds);
       await loadUserAccess();
       showToast('Access updated successfully!', 'success');
     } catch (err: any) {
@@ -180,6 +202,40 @@ export default function AccessControl() {
             </FormControl>
           </CardContent>
         </Card>
+
+        {selectedUser && groups.length > 0 && (
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>Groups</Box>
+              </Typography>
+              <FormControl fullWidth>
+                <InputLabel>Assigned Groups</InputLabel>
+                <Select
+                  multiple
+                  value={userGroupIds}
+                  onChange={(e) => setUserGroupIds(e.target.value as string[])}
+                  label="Assigned Groups"
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {(selected as string[]).map((id) => {
+                        const g = groups.find((x) => x.groupId === id);
+                        return <Chip key={id} label={g?.groupName ?? id} size="small" />;
+                      })}
+                    </Box>
+                  )}
+                >
+                  {groups.map((g) => (
+                    <MenuItem key={g.groupId} value={g.groupId}>{g.groupName} {g.groupDescription && `— ${g.groupDescription}`}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                User gets the union of nodes from direct access + all assigned groups. Create groups in Access Groups.
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
 
         {selectedUser && (
           <Card>
