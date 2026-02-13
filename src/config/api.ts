@@ -36,9 +36,11 @@ export const API_ENDPOINTS = {
     ME: {
       SCHOOLS: `${API_BASE_URL}/api/users/me/schools`,
       ACCESS: `${API_BASE_URL}/api/users/me/access`,
-      DEPARTMENTS: `${API_BASE_URL}/api/users/me/departments`
+      DEPARTMENTS: `${API_BASE_URL}/api/users/me/departments`,
+      SIDEBAR_ACCESS: `${API_BASE_URL}/api/users/me/sidebar-access`
     }
   },
+  SIDEBAR_ACCESS: `${API_BASE_URL}/api/sidebar-access`,
   DEPARTMENTS: `${API_BASE_URL}/api/departments`,
   NODES: `${API_BASE_URL}/api/nodes`
 } as const;

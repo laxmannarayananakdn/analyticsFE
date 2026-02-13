@@ -8,6 +8,9 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import InputLabel from '@mui/material/InputLabel';
 import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -29,6 +32,7 @@ import {
   createDashboard,
   updateDashboard,
   deleteDashboard,
+  DASHBOARD_FOLDERS,
   type SupersetDashboardConfig,
 } from '../services/SupersetDashboardConfigService';
 
@@ -52,6 +56,7 @@ export default function SupersetConfig() {
     description: '',
     sort_order: 0,
     is_active: true,
+    folder: 'Education',
   });
 
   useEffect(() => {
@@ -88,6 +93,7 @@ export default function SupersetConfig() {
       description: '',
       sort_order: 0,
       is_active: true,
+      folder: 'Education',
     });
     setEditingId(null);
   };
@@ -99,6 +105,7 @@ export default function SupersetConfig() {
       description: config.description || '',
       sort_order: config.sort_order ?? 0,
       is_active: config.is_active ?? true,
+      folder: config.folder || 'Education',
     });
     setEditingId(config.id!);
   };
@@ -120,6 +127,7 @@ export default function SupersetConfig() {
           description: formData.description?.trim() || undefined,
           sort_order: formData.sort_order ?? 0,
           is_active: formData.is_active ?? true,
+          folder: (formData.folder as string) || 'Education',
         });
         showToast('Dashboard added successfully', 'success');
       }
@@ -201,6 +209,20 @@ export default function SupersetConfig() {
                   placeholder="Optional"
                   fullWidth
                 />
+                <Box>
+                  <InputLabel id="folder-label" sx={{ mb: 0.5 }}>Folder</InputLabel>
+                  <Select
+                    labelId="folder-label"
+                    value={formData.folder || 'Education'}
+                    onChange={(e) => handleInputChange('folder', e.target.value)}
+                    fullWidth
+                    size="medium"
+                  >
+                    {DASHBOARD_FOLDERS.map((f) => (
+                      <MenuItem key={f} value={f}>{f}</MenuItem>
+                    ))}
+                  </Select>
+                </Box>
                 <TextField
                   label="Sort Order"
                   type="number"
@@ -208,6 +230,7 @@ export default function SupersetConfig() {
                   onChange={(e) => handleInputChange('sort_order', parseInt(e.target.value) || 0)}
                   fullWidth
                   inputProps={{ min: 0 }}
+                  helperText="Order within folder; ties broken by Display Name"
                 />
                 <FormControlLabel
                   control={<Checkbox checked={formData.is_active ?? true} onChange={(e) => handleInputChange('is_active', e.target.checked)} />}
@@ -251,6 +274,7 @@ export default function SupersetConfig() {
                           <Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                               <Typography fontWeight="600">{d.name}</Typography>
+                              <Chip label={d.folder || 'Education'} size="small" variant="outlined" />
                               <Chip label={d.is_active ? 'Active' : 'Inactive'} color={d.is_active ? 'success' : 'default'} size="small" />
                             </Box>
                             <Typography variant="body2" color="text.secondary" fontFamily="monospace">{d.uuid}</Typography>

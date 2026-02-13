@@ -6,6 +6,9 @@
 import { apiClient } from './apiClient';
 import API_ENDPOINTS from '../config/api';
 
+export const DASHBOARD_FOLDERS = ['Education', 'Finance', 'HR', 'Operations'] as const;
+export type DashboardFolder = (typeof DASHBOARD_FOLDERS)[number];
+
 export interface SupersetDashboardConfig {
   id?: number;
   uuid: string;
@@ -13,6 +16,7 @@ export interface SupersetDashboardConfig {
   description?: string;
   sort_order: number;
   is_active: boolean;
+  folder?: DashboardFolder | string;
 }
 
 const BASE = API_ENDPOINTS.SUPERSET.DASHBOARD_CONFIG;

@@ -5,16 +5,11 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
 import API_ENDPOINTS from '../config/api';
 import { getDashboards } from '../services/SupersetDashboardConfigService';
 
 const SUPERSET_BASE = (import.meta.env.VITE_SUPERSET_URL || 'https://superset-edtech-app.azurewebsites.net').replace(/\/$/, '');
 const SUPERSET_DOMAIN = SUPERSET_BASE;
-const DEFAULT_UUID = 'af48524f-ae1a-44f3-8fe3-deaf1c16f7fe';
 
 export default function SupersetDashboard() {
   const { dashboardUuid } = useParams<{ dashboardUuid: string }>();
@@ -22,27 +17,29 @@ export default function SupersetDashboard() {
   const dashboardRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dashboards, setDashboards] = useState<{ uuid: string; name: string }[]>([]);
-  const [selectedUuid, setSelectedUuid] = useState<string>(dashboardUuid || '');
+
+  // Redirect /superset-dashboard (no uuid) to first configured dashboard or /dashboard
+  useEffect(() => {
+    if (!dashboardUuid) {
+      getDashboards(true)
+        .then((list) => {
+          const sorted = [...list].sort((a, b) => {
+            const so = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+            return so !== 0 ? so : (a.name || '').localeCompare(b.name || '');
+          });
+          const first = sorted[0];
+          if (first) {
+            navigate(`/superset-dashboard/${first.uuid}`, { replace: true });
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
+        })
+        .catch(() => navigate('/dashboard', { replace: true }));
+    }
+  }, [dashboardUuid, navigate]);
 
   useEffect(() => {
-    getDashboards(true)
-      .then((list) => {
-        setDashboards(list);
-        if (dashboardUuid) {
-          setSelectedUuid(dashboardUuid);
-        } else {
-          setSelectedUuid(list.length > 0 ? list[0].uuid : DEFAULT_UUID);
-        }
-      })
-      .catch(() => {
-        setSelectedUuid(dashboardUuid || DEFAULT_UUID);
-      });
-  }, [dashboardUuid]);
-
-  useEffect(() => {
-    const uuidToUse = dashboardUuid || selectedUuid || DEFAULT_UUID;
-    if (!uuidToUse) return;
+    if (!dashboardUuid) return;
 
     const fetchTokenAndEmbed = async () => {
       try {
@@ -57,7 +54,7 @@ export default function SupersetDashboard() {
           method: 'POST',
           credentials: 'include',
           headers,
-          body: JSON.stringify({ dashboardId: uuidToUse }),
+          body: JSON.stringify({ dashboardId: dashboardUuid }),
         });
 
         if (!response.ok) {
@@ -74,7 +71,7 @@ export default function SupersetDashboard() {
 
         if (dashboardRef.current) {
           await embedDashboard({
-            id: uuidToUse,
+            id: dashboardUuid,
             supersetDomain: SUPERSET_DOMAIN,
             mountPoint: dashboardRef.current,
             fetchGuestToken: () => Promise.resolve(token),
@@ -99,37 +96,22 @@ export default function SupersetDashboard() {
     };
 
     fetchTokenAndEmbed();
-  }, [dashboardUuid, selectedUuid]);
+  }, [dashboardUuid]);
 
-  const handleDashboardChange = (uuid: string) => {
-    setSelectedUuid(uuid);
-    navigate(`/superset-dashboard/${uuid}`, { replace: true });
-  };
-
-  const currentUuid = dashboardUuid || selectedUuid || DEFAULT_UUID;
+  if (!dashboardUuid) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height={400}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+      <Box sx={{ mb: 2 }}>
         <Typography variant="h4" fontWeight="bold">
           Superset Dashboard
         </Typography>
-        {dashboards.length > 0 && (
-          <FormControl size="small" sx={{ minWidth: 220 }}>
-            <InputLabel>Dashboard</InputLabel>
-            <Select
-              value={currentUuid}
-              label="Dashboard"
-              onChange={(e) => handleDashboardChange(e.target.value)}
-            >
-              {dashboards.map((d) => (
-                <MenuItem key={d.uuid} value={d.uuid}>
-                  {d.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
       </Box>
 
       {error && (

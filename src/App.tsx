@@ -16,6 +16,7 @@ import ChangePassword from './pages/ChangePassword';
 import UserManagement from './pages/UserManagement';
 import AccessControl from './pages/AccessControl';
 import AccessGroupsManagement from './pages/AccessGroupsManagement';
+import SidebarAccessManagement from './pages/SidebarAccessManagement';
 import MicrosoftTenantConfig from './pages/MicrosoftTenantConfig';
 import NodeManagement from './pages/NodeManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
@@ -228,6 +229,16 @@ function App() {
             <ProtectedRoute>
               <PageLayout>
                 <AccessGroupsManagement />
+              </PageLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/sidebar-access"
+          element={
+            <ProtectedRoute>
+              <PageLayout>
+                <SidebarAccessManagement />
               </PageLayout>
             </ProtectedRoute>
           }
