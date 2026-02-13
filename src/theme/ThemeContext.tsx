@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { createAppTheme, ThemeId } from './themes';
@@ -23,11 +23,11 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [themeId, setThemeId] = useState<ThemeId>('dark');
-  const theme = useMemo(() => createAppTheme(themeId), [themeId]);
+  const themeId: ThemeId = 'light';
+  const theme = useMemo(() => createAppTheme(themeId), []);
   const value = useMemo(
-    () => ({ themeId, setThemeId }),
-    [themeId]
+    () => ({ themeId, setThemeId: () => {} }),
+    []
   );
 
   return (

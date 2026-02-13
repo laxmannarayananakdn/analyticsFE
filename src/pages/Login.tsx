@@ -10,7 +10,6 @@ import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import { authService } from '../services/AuthService';
 import { getTenantConfigForLogin } from '../services/MicrosoftTenantConfigService';
-import ThemeSwitcher from '../components/ThemeSwitcher';
 import { PublicClientApplication } from '@azure/msal-browser';
 
 export default function Login() {
@@ -123,14 +122,15 @@ export default function Login() {
       sx={{
         minHeight: '100vh',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default',
         p: 2,
       }}
     >
-      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-        <ThemeSwitcher />
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+        <Box component="img" src="/AKS%20Logos.png" alt="AKS Logo" sx={{ maxHeight: 80, width: 'auto', maxWidth: 240, objectFit: 'contain' }} />
       </Box>
       <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 3 }}>

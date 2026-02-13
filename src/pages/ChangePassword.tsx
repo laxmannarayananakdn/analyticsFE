@@ -9,7 +9,6 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import { authService } from '../services/AuthService';
-import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const PASSWORD_RULES = 'At least 8 characters, with uppercase, lowercase, number, and special character.';
 
@@ -64,9 +63,6 @@ export default function ChangePassword() {
           p: 2,
         }}
       >
-        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-          <ThemeSwitcher />
-        </Box>
         <Card sx={{ maxWidth: 400, width: '100%', textAlign: 'center' }}>
           <CardContent sx={{ p: 3 }}>
             <Typography variant="body2" color="text.secondary">
@@ -89,9 +85,6 @@ export default function ChangePassword() {
         p: 2,
       }}
     >
-      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-        <ThemeSwitcher />
-      </Box>
       <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="h5" component="h1" gutterBottom>

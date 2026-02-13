@@ -32,7 +32,6 @@ import FolderIcon from '@mui/icons-material/Folder';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
-import ThemeSwitcher from './ThemeSwitcher';
 import { authService } from '../services/AuthService';
 import { getDashboards, DASHBOARD_FOLDERS } from '../services/SupersetDashboardConfigService';
 import { getMySidebarAccess } from '../services/SidebarAccessService';
@@ -168,7 +167,11 @@ export default function PageLayout({ children }: PageLayoutProps) {
             borderColor: 'divider',
           }}
         >
-          {!collapsed && <ThemeSwitcher />}
+          {collapsed ? (
+            <Box component="img" src="/AKS%20Logos.png" alt="AKS Logo" sx={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+          ) : (
+            <Box component="img" src="/AKS%20Logos.png" alt="AKS Logo" sx={{ height: 40, width: 'auto', maxWidth: 180, objectFit: 'contain' }} />
+          )}
           <IconButton onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} size="small">
             {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
           </IconButton>
