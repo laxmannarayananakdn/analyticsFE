@@ -12,6 +12,7 @@ class ApiClient {
     this.client = axios.create({
       baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
       timeout: 30000, // Default 30s, can be overridden per request
+      withCredentials: true, // Send cookies with cross-origin requests
       headers: {
         'Content-Type': 'application/json'
       }

@@ -21,7 +21,8 @@ export const API_ENDPOINTS = {
   },
   SUPERSET: {
     DASHBOARDS: `${API_BASE_URL}/api/superset/dashboards`,
-    GUEST_TOKEN: `${API_BASE_URL}/api/superset/guest-token`
+    GUEST_TOKEN: `${API_BASE_URL}/api/superset/guest-token`,
+    EMBED_TOKEN: `${API_BASE_URL}/api/superset/embed-token`,
   },
   AUTH: {
     LOGIN: `${API_BASE_URL}/api/auth/login`,

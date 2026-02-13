@@ -18,6 +18,7 @@ import AccessControl from './pages/AccessControl';
 import NodeManagement from './pages/NodeManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
 import SchoolAssignment from './pages/SchoolAssignment';
+import SupersetDashboard from './pages/SupersetDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import PageLayout from './components/PageLayout';
 
@@ -104,6 +105,16 @@ function App() {
             <ProtectedRoute>
               <PageLayout>
                 <Dashboard />
+              </PageLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/superset-dashboard"
+          element={
+            <ProtectedRoute>
+              <PageLayout>
+                <SupersetDashboard />
               </PageLayout>
             </ProtectedRoute>
           }

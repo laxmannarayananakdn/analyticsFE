@@ -21,6 +21,7 @@ import ShieldIcon from '@mui/icons-material/Shield';
 import BusinessIcon from '@mui/icons-material/Business';
 import WorkIcon from '@mui/icons-material/Work';
 import SchoolIcon from '@mui/icons-material/School';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -35,6 +36,7 @@ interface PageLayoutProps {
 
 const navItems: { to: string; label: string; icon: React.ReactNode }[] = [
   { to: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
+  { to: '/superset-dashboard', label: 'Superset Dashboard', icon: <AssessmentIcon /> },
   { to: '/admin/ef-upload', label: 'Upload External Files', icon: <UploadFileIcon /> },
   { to: '/admin/nexquare-config', label: 'Nexquare Configuration', icon: <SettingsIcon /> },
   { to: '/admin/managebac-config', label: 'ManageBac Configuration', icon: <SettingsIcon /> },
