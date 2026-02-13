@@ -23,11 +23,15 @@ export default function SupersetDashboard() {
         setLoading(true);
         setError(null);
 
-        // Fetch guest token from your backend
+        // Fetch guest token from your backend (cookie or Bearer token for cross-origin)
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        const authToken = localStorage.getItem('auth_token');
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
         const response = await fetch(API_ENDPOINTS.SUPERSET.EMBED_TOKEN, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ dashboardId: DASHBOARD_UUID }),
         });
 
