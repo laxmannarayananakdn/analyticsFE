@@ -19,6 +19,7 @@ import NodeManagement from './pages/NodeManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
 import SchoolAssignment from './pages/SchoolAssignment';
 import SupersetDashboard from './pages/SupersetDashboard';
+import SupersetConfig from './pages/SupersetConfig';
 import ProtectedRoute from './components/ProtectedRoute';
 import PageLayout from './components/PageLayout';
 
@@ -115,6 +116,26 @@ function App() {
             <ProtectedRoute>
               <PageLayout>
                 <SupersetDashboard />
+              </PageLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/superset-dashboard/:dashboardUuid"
+          element={
+            <ProtectedRoute>
+              <PageLayout>
+                <SupersetDashboard />
+              </PageLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/superset-config"
+          element={
+            <ProtectedRoute>
+              <PageLayout>
+                <SupersetConfig />
               </PageLayout>
             </ProtectedRoute>
           }

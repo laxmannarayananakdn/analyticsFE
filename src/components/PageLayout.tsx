@@ -37,6 +37,7 @@ interface PageLayoutProps {
 const navItems: { to: string; label: string; icon: React.ReactNode }[] = [
   { to: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
   { to: '/superset-dashboard', label: 'Superset Dashboard', icon: <AssessmentIcon /> },
+  { to: '/admin/superset-config', label: 'Superset Dashboards Config', icon: <SettingsIcon /> },
   { to: '/admin/ef-upload', label: 'Upload External Files', icon: <UploadFileIcon /> },
   { to: '/admin/nexquare-config', label: 'Nexquare Configuration', icon: <SettingsIcon /> },
   { to: '/admin/managebac-config', label: 'ManageBac Configuration', icon: <SettingsIcon /> },

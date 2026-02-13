@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
     DASHBOARDS: `${API_BASE_URL}/api/superset/dashboards`,
     GUEST_TOKEN: `${API_BASE_URL}/api/superset/guest-token`,
     EMBED_TOKEN: `${API_BASE_URL}/api/superset/embed-token`,
+    DASHBOARD_CONFIG: `${API_BASE_URL}/api/superset-dashboard-config`,
   },
   AUTH: {
     LOGIN: `${API_BASE_URL}/api/auth/login`,
