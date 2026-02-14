@@ -123,15 +123,15 @@ class AuthService {
   }
 
   /**
-   * Logout
+   * Logout - clear all auth state so user must sign in again
+   * Removes token first, then tells backend to clear session cookie
    */
   async logout(): Promise<void> {
+    this.removeToken();
     try {
       await apiClient.post('/api/auth/logout', {});
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      this.removeToken();
     }
   }
 
