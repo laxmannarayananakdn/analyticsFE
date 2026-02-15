@@ -9,6 +9,8 @@ import API_ENDPOINTS from '../config/api';
 export const DASHBOARD_FOLDERS = ['Education', 'Finance', 'HR', 'Operations'] as const;
 export type DashboardFolder = (typeof DASHBOARD_FOLDERS)[number];
 
+export type ReportScope = 'global' | 'country' | 'school';
+
 export interface SupersetDashboardConfig {
   id?: number;
   uuid: string;
@@ -17,6 +19,9 @@ export interface SupersetDashboardConfig {
   sort_order: number;
   is_active: boolean;
   folder?: DashboardFolder | string;
+  department_id?: string | null;
+  report_scope?: ReportScope | string | null;
+  scope_node_id?: string | null;
 }
 
 const BASE = API_ENDPOINTS.SUPERSET.DASHBOARD_CONFIG;

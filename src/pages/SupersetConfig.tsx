@@ -35,6 +35,7 @@ import {
   DASHBOARD_FOLDERS,
   type SupersetDashboardConfig,
 } from '../services/SupersetDashboardConfigService';
+import { authService } from '../services/AuthService';
 
 interface Toast {
   id: string;
@@ -57,10 +58,24 @@ export default function SupersetConfig() {
     sort_order: 0,
     is_active: true,
     folder: 'Education',
+    department_id: null,
+    report_scope: null,
+    scope_node_id: null,
   });
+  const [departments, setDepartments] = useState<Array<{ departmentId: string; departmentName: string }>>([]);
+  const [nodes, setNodes] = useState<Array<{ nodeId: string; nodeDescription: string; isHeadOffice: boolean }>>([]);
 
   useEffect(() => {
     loadDashboards();
+  }, []);
+  useEffect(() => {
+    Promise.all([
+      authService.getDepartments().catch(() => []),
+      authService.getNodes(false).catch(() => []),
+    ]).then(([depts, nodeList]) => {
+      setDepartments(depts);
+      setNodes(nodeList);
+    });
   }, []);
 
   const loadDashboards = async () => {
@@ -94,6 +109,9 @@ export default function SupersetConfig() {
       sort_order: 0,
       is_active: true,
       folder: 'Education',
+      department_id: null,
+      report_scope: null,
+      scope_node_id: null,
     });
     setEditingId(null);
   };
@@ -106,6 +124,9 @@ export default function SupersetConfig() {
       sort_order: config.sort_order ?? 0,
       is_active: config.is_active ?? true,
       folder: config.folder || 'Education',
+      department_id: config.department_id || null,
+      report_scope: config.report_scope || null,
+      scope_node_id: config.scope_node_id || null,
     });
     setEditingId(config.id!);
   };
@@ -118,7 +139,12 @@ export default function SupersetConfig() {
 
     try {
       if (editingId) {
-        await updateDashboard(editingId, formData);
+        await updateDashboard(editingId, {
+          ...formData,
+          department_id: formData.department_id || undefined,
+          report_scope: formData.report_scope || undefined,
+          scope_node_id: formData.scope_node_id || undefined,
+        });
         showToast('Dashboard updated successfully', 'success');
       } else {
         await createDashboard({
@@ -128,6 +154,9 @@ export default function SupersetConfig() {
           sort_order: formData.sort_order ?? 0,
           is_active: formData.is_active ?? true,
           folder: (formData.folder as string) || 'Education',
+          department_id: formData.department_id || undefined,
+          report_scope: formData.report_scope || undefined,
+          scope_node_id: formData.scope_node_id || undefined,
         });
         showToast('Dashboard added successfully', 'success');
       }
@@ -223,6 +252,62 @@ export default function SupersetConfig() {
                     ))}
                   </Select>
                 </Box>
+                <Box>
+                  <InputLabel id="department-label" sx={{ mb: 0.5 }}>Department</InputLabel>
+                  <Select
+                    labelId="department-label"
+                    value={formData.department_id || ''}
+                    onChange={(e) => handleInputChange('department_id', e.target.value || null)}
+                    fullWidth
+                    size="medium"
+                    displayEmpty
+                  >
+                    <MenuItem value="">None</MenuItem>
+                    {departments.map((d) => (
+                      <MenuItem key={d.departmentId} value={d.departmentId}>{d.departmentName}</MenuItem>
+                    ))}
+                  </Select>
+                  <Typography variant="caption" color="text.secondary">Aligns with admin.Department for RBAC</Typography>
+                </Box>
+                <Box>
+                  <InputLabel id="scope-label" sx={{ mb: 0.5 }}>Report Scope</InputLabel>
+                  <Select
+                    labelId="scope-label"
+                    value={formData.report_scope || ''}
+                    onChange={(e) => handleInputChange('report_scope', e.target.value || null)}
+                    fullWidth
+                    size="medium"
+                    displayEmpty
+                  >
+                    <MenuItem value="">None</MenuItem>
+                    <MenuItem value="global">Global (Head Office)</MenuItem>
+                    <MenuItem value="country">Country / Region</MenuItem>
+                    <MenuItem value="school">School</MenuItem>
+                  </Select>
+                </Box>
+                {(formData.report_scope === 'global' || formData.report_scope === 'country' || formData.report_scope === 'school') && (
+                  <Box>
+                    <InputLabel id="scope-node-label" sx={{ mb: 0.5 }}>Scope Node</InputLabel>
+                    <Select
+                      labelId="scope-node-label"
+                      value={formData.scope_node_id || ''}
+                      onChange={(e) => handleInputChange('scope_node_id', e.target.value || null)}
+                      fullWidth
+                      size="medium"
+                      displayEmpty
+                    >
+                      <MenuItem value="">Select node</MenuItem>
+                      {nodes.map((n) => (
+                        <MenuItem key={n.nodeId} value={n.nodeId}>
+                          {n.nodeDescription} ({n.nodeId}){n.isHeadOffice ? ' — Head Office' : ''}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <Typography variant="caption" color="text.secondary">
+                      Global = Head Office node. Required for scope-based report filtering.
+                    </Typography>
+                  </Box>
+                )}
                 <TextField
                   label="Sort Order"
                   type="number"
@@ -272,9 +357,11 @@ export default function SupersetConfig() {
                       <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
                               <Typography fontWeight="600">{d.name}</Typography>
                               <Chip label={d.folder || 'Education'} size="small" variant="outlined" />
+                              {d.department_id && <Chip label={d.department_id} size="small" variant="outlined" color="primary" />}
+                              {d.report_scope && <Chip label={d.report_scope} size="small" variant="outlined" />}
                               <Chip label={d.is_active ? 'Active' : 'Inactive'} color={d.is_active ? 'success' : 'default'} size="small" />
                             </Box>
                             <Typography variant="body2" color="text.secondary" fontFamily="monospace">{d.uuid}</Typography>

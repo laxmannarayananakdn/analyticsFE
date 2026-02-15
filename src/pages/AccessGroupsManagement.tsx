@@ -18,6 +18,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import IconButton from '@mui/material/IconButton';
 import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import Chip from '@mui/material/Chip';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -31,6 +32,11 @@ interface AccessGroup {
   groupId: string;
   groupName: string;
   groupDescription: string | null;
+}
+
+interface PageItem {
+  id: string;
+  label: string;
 }
 
 interface NodeAccess {
@@ -51,10 +57,15 @@ export default function AccessGroupsManagement() {
   const [modalGroupName, setModalGroupName] = useState('');
   const [modalGroupDescription, setModalGroupDescription] = useState('');
   const [modalNodeAccesses, setModalNodeAccesses] = useState<Record<string, NodeAccess>>({});
+  const [modalPageIds, setModalPageIds] = useState<Set<string>>(new Set());
+  const [pageItems, setPageItems] = useState<PageItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    authService.getAvailablePageItems().then(setPageItems).catch(() => setPageItems([]));
+  }, []);
 
   const loadData = async () => {
     try {
@@ -80,8 +91,18 @@ export default function AccessGroupsManagement() {
     setModalGroupName('');
     setModalGroupDescription('');
     setModalNodeAccesses({});
+    setModalPageIds(new Set());
     setError(null);
     setShowModal(false);
+  };
+
+  const togglePage = (itemId: string, checked: boolean) => {
+    setModalPageIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(itemId);
+      else next.delete(itemId);
+      return next;
+    });
   };
 
   const openCreate = () => {
@@ -90,6 +111,7 @@ export default function AccessGroupsManagement() {
       accessObj[n.nodeId] = { nodeId: n.nodeId, nodeDescription: n.nodeDescription, departments: [] };
     });
     setModalNodeAccesses(accessObj);
+    setModalPageIds(new Set());
     setEditingGroup(null);
     setModalGroupId('');
     setModalGroupName('');
@@ -103,7 +125,10 @@ export default function AccessGroupsManagement() {
     setModalGroupName(group.groupName);
     setModalGroupDescription(group.groupDescription || '');
     try {
-      const access = await authService.getGroupNodeAccess(group.groupId);
+      const [access, pageIds] = await Promise.all([
+        authService.getGroupNodeAccess(group.groupId),
+        authService.getGroupPageAccess(group.groupId),
+      ]);
       const accessObj: Record<string, NodeAccess> = {};
       nodes.forEach((n) => {
         accessObj[n.nodeId] = { nodeId: n.nodeId, nodeDescription: n.nodeDescription, departments: [] };
@@ -116,6 +141,7 @@ export default function AccessGroupsManagement() {
         }
       });
       setModalNodeAccesses(accessObj);
+      setModalPageIds(new Set(pageIds));
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to load group access', 'error');
     }
@@ -148,6 +174,7 @@ export default function AccessGroupsManagement() {
           .filter((na) => na.departments.length > 0)
           .map((na) => ({ nodeId: na.nodeId, departmentIds: na.departments }));
         await authService.setGroupNodeAccess(editingGroup.groupId, nodeAccess);
+        await authService.setGroupPageAccess(editingGroup.groupId, Array.from(modalPageIds));
         showToast('Group updated successfully', 'success');
       } else {
         await authService.createAccessGroup({ groupId: modalGroupId.trim(), groupName: modalGroupName.trim(), groupDescription: modalGroupDescription.trim() || undefined });
@@ -155,6 +182,7 @@ export default function AccessGroupsManagement() {
           .filter((na) => na.departments.length > 0)
           .map((na) => ({ nodeId: na.nodeId, departmentIds: na.departments }));
         await authService.setGroupNodeAccess(modalGroupId.trim(), nodeAccess);
+        await authService.setGroupPageAccess(modalGroupId.trim(), Array.from(modalPageIds));
         showToast('Group created successfully', 'success');
       }
       resetModal();
@@ -251,6 +279,27 @@ export default function AccessGroupsManagement() {
               <TextField label="Group Name" value={modalGroupName} onChange={(e) => setModalGroupName(e.target.value)} placeholder="e.g. India North - Academic" fullWidth required />
               <TextField label="Description" value={modalGroupDescription} onChange={(e) => setModalGroupDescription(e.target.value)} placeholder="Optional" fullWidth multiline rows={2} />
             </Box>
+            {pageItems.length > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle1" sx={{ mb: 2 }}>Sidebar Page Access</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Pages and admin screens users in this group can see</Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {pageItems.map((item) => (
+                    <FormControlLabel
+                      key={item.id}
+                      control={
+                        <Checkbox
+                          checked={modalPageIds.has(item.id)}
+                          onChange={(e) => togglePage(item.id, e.target.checked)}
+                          size="small"
+                        />
+                      }
+                      label={item.label}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
             {nodes.length > 0 && (
               <Box sx={{ mt: 3 }}>
                 <Typography variant="subtitle1" sx={{ mb: 2 }}>Node & Department Access</Typography>

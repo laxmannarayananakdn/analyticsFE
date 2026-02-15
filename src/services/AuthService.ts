@@ -366,6 +366,20 @@ class AuthService {
     return apiClient.put(`/api/access-groups/${encodeURIComponent(groupId)}/nodes`, { nodeAccess });
   }
 
+  async getGroupPageAccess(groupId: string): Promise<string[]> {
+    const res = await apiClient.get<{ itemIds: string[] }>(`/api/access-groups/${encodeURIComponent(groupId)}/pages`);
+    return res.itemIds ?? [];
+  }
+
+  async setGroupPageAccess(groupId: string, itemIds: string[]): Promise<void> {
+    return apiClient.put(`/api/access-groups/${encodeURIComponent(groupId)}/pages`, { itemIds });
+  }
+
+  async getAvailablePageItems(): Promise<Array<{ id: string; label: string }>> {
+    const res = await apiClient.get<{ items: Array<{ id: string; label: string }> }>('/api/access-groups/available-pages');
+    return res.items ?? [];
+  }
+
   async getUserGroups(email: string): Promise<string[]> {
     const res = await apiClient.get<{ groupIds: string[] }>(`/api/users/${encodeURIComponent(email)}/groups`);
     return res.groupIds;

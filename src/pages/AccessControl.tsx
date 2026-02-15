@@ -24,6 +24,12 @@ import PeopleIcon from '@mui/icons-material/People';
 import SaveIcon from '@mui/icons-material/Save';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { authService, User, Department, Node, UserAccess } from '../services/AuthService';
+import {
+  getReportGroups,
+  getUserReportGroups,
+  setUserReportGroups,
+  type ReportGroup,
+} from '../services/ReportGroupService';
 
 interface NodeAccess {
   nodeId: string;
@@ -39,9 +45,11 @@ export default function AccessControl() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [groups, setGroups] = useState<Array<{ groupId: string; groupName: string; groupDescription: string | null }>>([]);
+  const [reportGroups, setReportGroups] = useState<ReportGroup[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>(userFromUrl || '');
   const [userAccess, setUserAccess] = useState<UserAccess[]>([]);
   const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
+  const [userReportGroupIds, setUserReportGroupIds] = useState<string[]>([]);
   const [nodeAccesses, setNodeAccesses] = useState<Record<string, NodeAccess>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,7 +67,7 @@ export default function AccessControl() {
   }, [userFromUrl, users]);
   useEffect(() => {
     if (selectedUser) loadUserAccess();
-    else { setUserAccess([]); setUserGroupIds([]); setNodeAccesses({}); }
+    else { setUserAccess([]); setUserGroupIds([]); setUserReportGroupIds([]); setNodeAccesses({}); }
   }, [selectedUser]);
   useEffect(() => {
     if (userAccess.length > 0 && nodes.length > 0) {
@@ -88,16 +96,18 @@ export default function AccessControl() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersData, deptsData, nodesData, groupsData] = await Promise.all([
+      const [usersData, deptsData, nodesData, groupsData, reportGroupsData] = await Promise.all([
         authService.getUsers(),
         authService.getDepartments(),
         authService.getNodes(false),
         authService.getAccessGroups().catch(() => []),
+        getReportGroups().catch(() => []),
       ]);
       setUsers(usersData);
       setDepartments(deptsData.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999)));
       setNodes(nodesData);
       setGroups(groupsData);
+      setReportGroups(reportGroupsData);
     } catch (err: any) {
       console.error('Failed to load data:', err);
     } finally {
@@ -108,12 +118,14 @@ export default function AccessControl() {
   const loadUserAccess = async () => {
     if (!selectedUser) return;
     try {
-      const [access, groupIds] = await Promise.all([
+      const [access, groupIds, reportGroupIds] = await Promise.all([
         authService.getUserAccess(selectedUser),
         authService.getUserGroups(selectedUser).catch(() => []),
+        getUserReportGroups(selectedUser).catch(() => []),
       ]);
       setUserAccess(access);
       setUserGroupIds(groupIds);
+      setUserReportGroupIds(reportGroupIds);
     } catch (err: any) {
       console.error('Failed to load user access:', err);
     }
@@ -150,6 +162,7 @@ export default function AccessControl() {
         if (hasAccess) await authService.revokeNodeAccess(selectedUser, nodeAccess.nodeId);
       }
       await authService.setUserGroups(selectedUser, userGroupIds);
+      await setUserReportGroups(selectedUser, userReportGroupIds);
       await loadUserAccess();
       showToast('Access updated successfully!', 'success');
     } catch (err: any) {
@@ -203,11 +216,13 @@ export default function AccessControl() {
           </CardContent>
         </Card>
 
-        {selectedUser && groups.length > 0 && (
-          <Card sx={{ mb: 3 }}>
+        {selectedUser && (groups.length > 0 || reportGroups.length > 0) && (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr 1fr' }, gap: 3, mb: 3 }}>
+        {groups.length > 0 && (
+          <Card>
             <CardContent>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>Groups</Box>
+                <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>User Groups</Box>
               </Typography>
               <FormControl fullWidth>
                 <InputLabel>Assigned Groups</InputLabel>
@@ -231,10 +246,47 @@ export default function AccessControl() {
                 </Select>
               </FormControl>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                User gets the union of nodes from direct access + all assigned groups. Create groups in Access Groups.
+                Pages and nodes from assigned groups. Create in Access Groups.
               </Typography>
             </CardContent>
           </Card>
+        )}
+        {reportGroups.length > 0 && (
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                Report Groups
+              </Typography>
+              <FormControl fullWidth>
+                <InputLabel>Report Groups</InputLabel>
+                <Select
+                  multiple
+                  value={userReportGroupIds}
+                  onChange={(e) => setUserReportGroupIds(e.target.value as string[])}
+                  label="Report Groups"
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {(selected as string[]).map((id) => {
+                        const g = reportGroups.find((x) => x.reportGroupId === id);
+                        return <Chip key={id} label={g?.groupName ?? id} size="small" />;
+                      })}
+                    </Box>
+                  )}
+                >
+                  {reportGroups.map((g) => (
+                    <MenuItem key={g.reportGroupId} value={g.reportGroupId}>
+                      {g.groupName} {g.groupDescription && `— ${g.groupDescription}`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Reports the user can see (union of groups). Scope filtered by node access. Create in Report Groups.
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
+          </Box>
         )}
 
         {selectedUser && (

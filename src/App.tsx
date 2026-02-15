@@ -18,6 +18,7 @@ import UserManagement from './pages/UserManagement';
 import AccessControl from './pages/AccessControl';
 import AccessGroupsManagement from './pages/AccessGroupsManagement';
 import SidebarAccessManagement from './pages/SidebarAccessManagement';
+import ReportGroupsManagement from './pages/ReportGroupsManagement';
 import MicrosoftTenantConfig from './pages/MicrosoftTenantConfig';
 import NodeManagement from './pages/NodeManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
@@ -244,6 +245,16 @@ function AppContent() {
             <ProtectedRoute>
               <PageLayout>
                 <SidebarAccessManagement />
+              </PageLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/report-groups"
+          element={
+            <ProtectedRoute>
+              <PageLayout>
+                <ReportGroupsManagement />
               </PageLayout>
             </ProtectedRoute>
           }

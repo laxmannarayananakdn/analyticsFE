@@ -63,6 +63,7 @@ const adminNavItems: { to: string; label: string; icon: React.ReactNode; itemId:
   { to: '/admin/access-control', label: 'Access Control', icon: <ShieldIcon />, itemId: 'admin:access-control' },
   { to: '/admin/access-groups', label: 'Access Groups', icon: <GroupIcon />, itemId: 'admin:access-groups' },
   { to: '/admin/sidebar-access', label: 'RBAC Configuration', icon: <ListAltIcon />, itemId: 'admin:sidebar-access' },
+  { to: '/admin/report-groups', label: 'Report Groups', icon: <AssessmentIcon />, itemId: 'admin:report-groups' },
   { to: '/admin/microsoft-tenant-config', label: 'Microsoft Tenant Config', icon: <CloudIcon />, itemId: 'admin:microsoft-tenant-config' },
   { to: '/admin/nodes', label: 'Node Management', icon: <BusinessIcon />, itemId: 'admin:nodes' },
   { to: '/admin/departments', label: 'Department Management', icon: <WorkIcon />, itemId: 'admin:departments' },

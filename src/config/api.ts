@@ -41,6 +41,7 @@ export const API_ENDPOINTS = {
     }
   },
   SIDEBAR_ACCESS: `${API_BASE_URL}/api/sidebar-access`,
+  REPORT_GROUPS: `${API_BASE_URL}/api/report-groups`,
   DEPARTMENTS: `${API_BASE_URL}/api/departments`,
   NODES: `${API_BASE_URL}/api/nodes`
 } as const;
