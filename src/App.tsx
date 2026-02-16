@@ -25,7 +25,7 @@ import DepartmentManagement from './pages/DepartmentManagement';
 import SchoolAssignment from './pages/SchoolAssignment';
 import SupersetDashboard from './pages/SupersetDashboard';
 import SupersetConfig from './pages/SupersetConfig';
-import ProtectedRoute from './components/ProtectedRoute';
+import AccessProtectedRoute from './components/AccessProtectedRoute';
 import PageLayout from './components/PageLayout';
 
 function AppContent() {
@@ -104,199 +104,199 @@ function AppContent() {
         <Route
           path="/"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <Navigate to="/dashboard" replace />
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <Dashboard />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/superset-dashboard"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <SupersetDashboard />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/superset-dashboard/:dashboardUuid"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <SupersetDashboard />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/superset-config"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <SupersetConfig />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/ef-upload"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <EFUpload />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/nexquare-config"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <NexquareConfig />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/managebac-config"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <ManageBacConfig />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/rp-config"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <RPConfig />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/nexquare-sync"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <NexquareDataSync />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/managebac-sync"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <ManageBacDataSync />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <UserManagement />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/access-control"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <AccessControl />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/access-groups"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <AccessGroupsManagement />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/sidebar-access"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <SidebarAccessManagement />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/report-groups"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <ReportGroupsManagement />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/microsoft-tenant-config"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <MicrosoftTenantConfig />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/nodes"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <NodeManagement />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/departments"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <DepartmentManagement />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         <Route
           path="/admin/school-assignment"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <PageLayout>
                 <SchoolAssignment />
               </PageLayout>
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
         
@@ -304,9 +304,9 @@ function AppContent() {
         <Route
           path="*"
           element={
-            <ProtectedRoute>
+            <AccessProtectedRoute>
               <Navigate to="/dashboard" replace />
-            </ProtectedRoute>
+            </AccessProtectedRoute>
           }
         />
       </Routes>
