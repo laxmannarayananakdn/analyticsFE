@@ -37,17 +37,17 @@ export default function SidebarAccessManagement() {
             </Typography>
             <Box component="ul" sx={{ pl: 2.5, mb: 2 }}>
               <li>
-                <strong>User Groups (Access Groups)</strong> — Define which admin pages (dashboard, nodes, users, etc.) a group can see
+                <strong>Access Groups</strong> — Define groups with node/department access and which admin pages they can see
               </li>
               <li>
-                <strong>Report Groups</strong> — Define which Superset reports/dashboards a group can see (with scope filtering by node)
+                <strong>Report Groups</strong> — Define which Superset reports/dashboards a group can see
               </li>
               <li>
-                <strong>Access Control</strong> — Assign users to User Groups and Report Groups
+                <strong>Access Control</strong> — Assign users to User Groups and Report Groups (node access comes only from Access Groups)
               </li>
             </Box>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Users get the union of pages from their User Groups and reports from their Report Groups. Report visibility is filtered by the user&apos;s node access (scope).
+              Users get the union of pages from their User Groups and reports from their Report Groups. Report folders and reports flow from Report Groups alone.
             </Typography>
           </CardContent>
         </Card>
