@@ -9,6 +9,7 @@ export interface ManageBacSchoolConfig {
   id?: number;
   country: string;
   school_name: string;
+  school_id?: number | null;
   api_token: string;
   base_url: string;
   is_active: boolean;

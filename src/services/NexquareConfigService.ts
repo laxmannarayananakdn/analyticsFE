@@ -16,6 +16,7 @@ export interface NexquareSchoolConfig {
   id?: number;
   country: string;
   school_name: string;
+  school_id?: string | null;
   client_id: string;
   client_secret: string;
   domain_url: string;
