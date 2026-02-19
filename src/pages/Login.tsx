@@ -34,20 +34,17 @@ export default function Login() {
     }
   }, [navigate]);
 
-  // Check if Microsoft login is available for the entered email domain (debounced)
-  useEffect(() => {
+  // Check if Microsoft login is available when user tabs out of email field (onBlur only)
+  const handleEmailBlur = () => {
     const domain = email.split('@')[1]?.toLowerCase().trim();
     if (!domain) {
       setMicrosoftAvailable(null);
       return;
     }
-    const timer = setTimeout(() => {
-      getTenantConfigForLogin(domain)
-        .then((config) => setMicrosoftAvailable(config))
-        .catch(() => setMicrosoftAvailable(null));
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [email]);
+    getTenantConfigForLogin(domain)
+      .then((config) => setMicrosoftAvailable(config))
+      .catch(() => setMicrosoftAvailable(null));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +125,7 @@ export default function Login() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onBlur={handleEmailBlur}
             required
             fullWidth
             placeholder="user@example.com"
