@@ -75,6 +75,7 @@ export default function NexquareDataSync() {
   const [params, setParams] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ApiResult | null>(null);
+  const [syncLogs, setSyncLogs] = useState<string[]>([]);
   const [loadingConfigs, setLoadingConfigs] = useState(true);
   /** School ID (sourced_id) from last successful Authenticate or Get Schools, used to pre-fill other APIs */
   const [populatedSchoolId, setPopulatedSchoolId] = useState<string | null>(null);
@@ -100,6 +101,7 @@ export default function NexquareDataSync() {
   const handleEndpointSelect = (endpoint: ApiEndpoint) => {
     setSelectedEndpoint(endpoint);
     setResult(null);
+    setSyncLogs([]);
     const initialParams: Record<string, string> = {};
     endpoint.params?.forEach(param => {
       if (param.type === 'select' && param.options && param.options.length > 0) {
@@ -118,13 +120,93 @@ export default function NexquareDataSync() {
     if (!selectedConfigId || !selectedEndpoint) return;
     setLoading(true);
     setResult(null);
+    setSyncLogs([]);
+    const queryParams = new URLSearchParams();
+    queryParams.append('config_id', selectedConfigId.toString());
+    Object.entries(params).forEach(([key, value]) => {
+      if (value && value.trim() !== '') queryParams.append(key, value);
+    });
+
+    const useSyncStream = ['students', 'staff', 'classes', 'student-assessments'].includes(selectedEndpoint.id);
+
+    if (useSyncStream) {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const streamUrl = `${baseUrl}/api/nexquare/sync-stream/${selectedEndpoint.id}?${queryParams.toString()}`;
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = { Accept: 'text/event-stream' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      try {
+        const resp = await fetch(streamUrl, { headers, credentials: 'include' });
+        if (!resp.ok) {
+          const errText = await resp.text();
+          setResult({ success: false, message: 'Stream failed', error: errText || `HTTP ${resp.status}` });
+          setLoading(false);
+          return;
+        }
+        const reader = resp.body?.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        if (reader) {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const blocks = buffer.split('\n\n');
+              buffer = blocks.pop() || '';
+              for (const block of blocks) {
+                const m = block.match(/^data:\s*(.+)/m);
+                if (m) {
+                  try {
+                    const ev = JSON.parse(m[1]);
+                    if (ev.type === 'log') setSyncLogs((prev) => [...prev, ev.msg]);
+                    else if (ev.type === 'done') {
+                      if (ev.success) {
+                        setResult({ success: true, message: 'Sync completed', data: ev.data, count: ev.count });
+                        if (ev.schoolId && typeof ev.schoolId === 'string') setPopulatedSchoolId(ev.schoolId);
+                      } else {
+                        setResult({ success: false, message: 'Sync failed', error: ev.error });
+                      }
+                    }
+                  } catch {
+                    /* ignore */
+                  }
+                }
+              }
+            }
+            if (buffer) {
+              const m = buffer.match(/^data:\s*(.+)/m);
+              if (m) {
+                try {
+                  const ev = JSON.parse(m[1]);
+                  if (ev.type === 'log') setSyncLogs((prev) => [...prev, ev.msg]);
+                  else if (ev.type === 'done') {
+                    if (ev.success) {
+                      setResult({ success: true, message: 'Sync completed', data: ev.data, count: ev.count });
+                      if (ev.schoolId && typeof ev.schoolId === 'string') setPopulatedSchoolId(ev.schoolId);
+                    } else {
+                      setResult({ success: false, message: 'Sync failed', error: ev.error });
+                    }
+                  }
+                } catch {
+                  /* ignore */
+                }
+              }
+            }
+          } finally {
+            reader.releaseLock();
+          }
+        }
+      } catch (error: any) {
+        setResult({ success: false, message: 'Request failed', error: error.message || 'Unknown error' });
+      }
+      setLoading(false);
+      return;
+    }
+
     try {
-      const queryParams = new URLSearchParams();
-      queryParams.append('config_id', selectedConfigId.toString());
-      Object.entries(params).forEach(([key, value]) => {
-        if (value && value.trim() !== '') queryParams.append(key, value);
-      });
-      const SYNC_TIMEOUT = 120000;
+      const SYNC_TIMEOUT = 300000; // 5 min for non-streaming endpoints
       let response: ApiResult;
       if (selectedEndpoint.method === 'POST') {
         response = await apiClient.post<ApiResult>(`/api/nexquare/${selectedEndpoint.id}?${queryParams.toString()}`, {}, SYNC_TIMEOUT);
@@ -270,21 +352,35 @@ export default function NexquareDataSync() {
               </Card>
             )}
 
-            {result && (
+            {(result || syncLogs.length > 0) && (
               <Card>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {result.success ? <CheckCircleIcon color="success" /> : <ErrorIcon color="error" />} Result
+                      {result?.success !== false ? <CheckCircleIcon color="success" /> : result ? <ErrorIcon color="error" /> : null} {result ? 'Result' : 'Sync Log'}
                     </Typography>
-                    <IconButton size="small" onClick={() => setResult(null)}><CloseIcon /></IconButton>
+                    <IconButton size="small" onClick={() => { setResult(null); setSyncLogs([]); }}><CloseIcon /></IconButton>
                   </Box>
-                  <Box sx={{ p: 2, borderRadius: 1, bgcolor: result.success ? 'success.dark' : 'error.dark', color: 'white', mb: 2 }}>
-                    <Typography fontWeight={600}>{result.message}</Typography>
-                    {result.error && <Typography variant="body2" sx={{ mt: 1 }}>{result.error}</Typography>}
-                    {result.count !== undefined && <Typography variant="body2" sx={{ mt: 1 }}>Records fetched: <strong>{result.count}</strong></Typography>}
-                  </Box>
-                  {result.data && (
+                  {syncLogs.length > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>Output</Typography>
+                      <Box component="pre" sx={{ p: 2, bgcolor: '#1e1e1e', color: '#d4d4d4', borderRadius: 1, fontFamily: 'monospace', fontSize: 12, overflow: 'auto', maxHeight: 320 }}>
+                        {syncLogs.map((line, i) => (
+                          <Box key={i} component="span" sx={{ display: 'block' }}>{line}</Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                  {result && (
+                    <>
+                      <Box sx={{ p: 2, borderRadius: 1, bgcolor: result.success ? 'success.dark' : 'error.dark', color: 'white', mb: 2 }}>
+                        <Typography fontWeight={600}>{result.message}</Typography>
+                        {result.error && <Typography variant="body2" sx={{ mt: 1 }}>{result.error}</Typography>}
+                        {result.count !== undefined && <Typography variant="body2" sx={{ mt: 1 }}>Records fetched: <strong>{result.count}</strong></Typography>}
+                      </Box>
+                    </>
+                  )}
+                  {result?.data && (
                     <Box sx={{ mt: 2 }}>
                       <details>
                         <summary style={{ cursor: 'pointer', fontWeight: 500 }}>View Response Data</summary>
