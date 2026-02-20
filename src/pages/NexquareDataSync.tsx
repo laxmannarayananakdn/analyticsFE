@@ -120,7 +120,6 @@ export default function NexquareDataSync() {
     if (!selectedConfigId || !selectedEndpoint) return;
     setLoading(true);
     setResult(null);
-    setSyncLogs([]);
     const queryParams = new URLSearchParams();
     queryParams.append('config_id', selectedConfigId.toString());
     Object.entries(params).forEach(([key, value]) => {
@@ -128,6 +127,9 @@ export default function NexquareDataSync() {
     });
 
     const useSyncStream = ['students', 'staff', 'classes', 'student-assessments'].includes(selectedEndpoint.id);
+
+    // All endpoints show sync logs - add initial log so card appears immediately
+    setSyncLogs(useSyncStream ? [`📋 Starting ${selectedEndpoint.name}...`] : [`📋 Requesting ${selectedEndpoint.name}...`]);
 
     if (useSyncStream) {
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
@@ -140,7 +142,9 @@ export default function NexquareDataSync() {
         const resp = await fetch(streamUrl, { headers, credentials: 'include' });
         if (!resp.ok) {
           const errText = await resp.text();
-          setResult({ success: false, message: 'Stream failed', error: errText || `HTTP ${resp.status}` });
+          const errMsg = errText || `HTTP ${resp.status}`;
+          setSyncLogs(prev => [...prev, `❌ Failed: ${errMsg}`]);
+          setResult({ success: false, message: 'Stream failed', error: errMsg });
           setLoading(false);
           return;
         }
@@ -214,6 +218,7 @@ export default function NexquareDataSync() {
         response = await apiClient.get<ApiResult>(`/api/nexquare/${selectedEndpoint.id}?${queryParams.toString()}`, undefined, SYNC_TIMEOUT);
       }
       setResult(response);
+      setSyncLogs(prev => [...prev, response.success ? `✅ ${response.message || 'Completed'}` + (response.count != null ? ` — ${response.count} record(s)` : '') : `❌ Failed: ${(response as any).error || response.message}`]);
       // Capture School ID from response so we can pre-fill when user selects other APIs
       if (response.success) {
         const schoolId =
@@ -227,7 +232,9 @@ export default function NexquareDataSync() {
         }
       }
     } catch (error: any) {
-      setResult({ success: false, message: 'Request failed', error: error.response?.data?.error || error.message || 'Unknown error' });
+      const errMsg = error.response?.data?.error || error.message || 'Unknown error';
+      setResult({ success: false, message: 'Request failed', error: errMsg });
+      setSyncLogs(prev => [...prev, `❌ Failed: ${errMsg}`]);
     } finally {
       setLoading(false);
     }

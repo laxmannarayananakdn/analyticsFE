@@ -62,7 +62,7 @@ const MANAGEBAC_ENDPOINTS: ApiEndpoint[] = [
   { id: 'year-groups', name: 'Get Year Groups', description: 'Fetch all year groups', method: 'GET', icon: <GradingIcon /> },
   { id: 'year-groups/:id/students', name: 'Get Year Group Students', description: 'Fetch students for year groups', method: 'GET', icon: <PeopleIcon />, params: [{ key: 'id', label: 'Year Group ID (leave empty for all)', type: 'text' }, { key: 'academic_year_id', label: 'Academic Year ID (optional)', type: 'text' }, { key: 'term_id', label: 'Term ID (optional)', type: 'text' }] },
   { id: 'memberships', name: 'Get Memberships', description: 'Fetch class memberships', method: 'GET', icon: <AssignmentIcon />, params: [{ key: 'grade_number', label: 'Grade Number (default: 13)', type: 'number', placeholder: '13' }, { key: 'academic_year_id', label: 'Academic Year ID (optional)', type: 'text' }, { key: 'term_id', label: 'Term ID (optional)', type: 'text' }] },
-  { id: 'classes/:classId/term-grades/:termId', name: 'Get Term Grades', description: 'Fetch term grades', method: 'GET', icon: <GradingIcon />, params: [{ key: 'classId', label: 'Class ID', type: 'text' }, { key: 'termId', label: 'Term ID', type: 'text' }] },
+  { id: 'term-grades', name: 'Get Term Grades', description: 'Sync term grades for classes with memberships (run Get Memberships first)', method: 'GET', icon: <GradingIcon />, params: [{ key: 'grade_number', label: 'Grade Number (default: 13)', type: 'number', placeholder: '13' }, { key: 'term_id', label: 'Term ID (optional - specific term only)', type: 'text', placeholder: 'e.g., 12345' }, { key: 'class_id', label: 'Class ID (optional - specific class only)', type: 'text', placeholder: 'e.g., 12555415' }] },
 ];
 
 export default function ManageBacDataSync() {
@@ -100,7 +100,7 @@ export default function ManageBacDataSync() {
         const first = param.options[0];
         if (first) initialParams[param.key] = first.value;
       }
-      else if (param.key === 'grade_number' && endpoint.id === 'memberships') initialParams[param.key] = '13';
+      else if (param.key === 'grade_number' && (endpoint.id === 'memberships' || endpoint.id === 'term-grades')) initialParams[param.key] = '13';
     });
     setParams(initialParams);
   };
@@ -109,7 +109,6 @@ export default function ManageBacDataSync() {
     if (!selectedConfigId || !selectedEndpoint) return;
     setLoading(true);
     setResult(null);
-    setSyncLogs([]);
     const queryParams = new URLSearchParams();
     queryParams.append('config_id', selectedConfigId.toString());
     let endpointUrl = selectedEndpoint.id;
@@ -120,10 +119,13 @@ export default function ManageBacDataSync() {
     if (endpointUrl.includes(':classId') && params.classId) endpointUrl = endpointUrl.replace(':classId', params.classId);
     if (endpointUrl.includes(':termId') && params.termId) endpointUrl = endpointUrl.replace(':termId', params.termId);
     Object.entries(params).forEach(([key, value]) => {
-      if (value?.trim() && !['id', 'classId', 'termId'].includes(key)) queryParams.append(key, value);
+      if (value != null && String(value).trim() !== '' && !['id', 'classId', 'termId'].includes(key)) queryParams.append(key, String(value).trim());
     });
 
     const useSyncStream = ['students', 'teachers'].includes(selectedEndpoint.id);
+
+    // All endpoints show sync logs - add initial log so card appears immediately
+    setSyncLogs(useSyncStream ? [`📋 Starting ${selectedEndpoint.name}...`] : [`📋 Requesting ${selectedEndpoint.name}...`]);
 
     if (useSyncStream) {
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
@@ -135,7 +137,9 @@ export default function ManageBacDataSync() {
       const resp = await fetch(streamUrl, { headers, credentials: 'include' });
       if (!resp.ok) {
         const errText = await resp.text();
-        setResult({ success: false, message: 'Stream failed', error: errText || `HTTP ${resp.status}` });
+        const errMsg = errText || `HTTP ${resp.status}`;
+        setSyncLogs(prev => [...prev, `❌ Failed: ${errMsg}`]);
+        setResult({ success: false, message: 'Stream failed', error: errMsg });
         setLoading(false);
         return;
       }
@@ -205,13 +209,18 @@ export default function ManageBacDataSync() {
       }
       if (Array.isArray(response)) {
         setResult({ success: true, message: 'Request successful', data: response, count: response.length });
+        setSyncLogs(prev => [...prev, `✅ Completed: ${response.length} record(s)`]);
       } else if (response.success !== undefined) {
         setResult(response);
+        setSyncLogs(prev => [...prev, response.success ? `✅ ${response.message || 'Completed'}` : `❌ Failed: ${(response as any).error || response.message}`]);
       } else {
         setResult({ success: true, message: 'Request successful', data: response });
+        setSyncLogs(prev => [...prev, '✅ Completed']);
       }
     } catch (error: any) {
-      setResult({ success: false, message: 'Request failed', error: error.response?.data?.error || error.message || 'Unknown error' });
+      const errMsg = error.response?.data?.error || error.message || 'Unknown error';
+      setResult({ success: false, message: 'Request failed', error: errMsg });
+      setSyncLogs(prev => [...prev, `❌ Failed: ${errMsg}`]);
     } finally {
       setLoading(false);
     }
