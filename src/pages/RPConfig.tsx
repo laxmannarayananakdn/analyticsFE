@@ -35,6 +35,7 @@ import {
   AssessmentComponentConfig,
   School
 } from '../services/RPConfigService';
+import { authService } from '../services/AuthService';
 
 interface Toast {
   id: string;
@@ -65,6 +66,13 @@ export default function RPConfig() {
   }, []);
 
   useEffect(() => {
+    if (selectedSchoolId && !schools.some(s => s.school_id === selectedSchoolId)) {
+      setSelectedSchoolId('');
+      setSelectedAcademicYear('');
+    }
+  }, [schools, selectedSchoolId]);
+
+  useEffect(() => {
     if (selectedSchoolId) {
       loadAcademicYears(selectedSchoolId);
       loadSubjects(selectedSchoolId);
@@ -91,8 +99,18 @@ export default function RPConfig() {
 
   const loadSchools = async () => {
     try {
-      const data = await rpConfigService.getSchools();
-      setSchools(data);
+      const [allSchools, mySchools] = await Promise.all([
+        rpConfigService.getSchools(),
+        authService.getMySchools().catch(() => []),
+      ]);
+      // RP Config uses NEX schools - filter to those user has access to (source 'nex')
+      const nexSchoolIds = new Set(
+        (mySchools || []).filter(s => s.schoolSource === 'nex').map(s => s.schoolId)
+      );
+      const filtered = nexSchoolIds.size > 0
+        ? allSchools.filter(s => nexSchoolIds.has(s.school_id))
+        : []; // No school access = show no schools
+      setSchools(filtered);
     } catch (error: any) {
       showToast('Failed to load schools', 'error');
       console.error('Error loading schools:', error);

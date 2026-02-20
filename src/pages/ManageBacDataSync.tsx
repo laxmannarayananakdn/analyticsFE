@@ -25,6 +25,7 @@ import GradingIcon from '@mui/icons-material/Grading';
 import Link from '@mui/material/Link';
 import { Link as RouterLink } from 'react-router-dom';
 import { manageBacConfigService, ManageBacSchoolConfig } from '../services/ManageBacConfigService';
+import { authService } from '../services/AuthService';
 import { apiClient } from '../services/apiClient';
 
 interface ApiEndpoint {
@@ -77,11 +78,30 @@ export default function ManageBacDataSync() {
 
   useEffect(() => { loadConfigs(); }, []);
 
+  useEffect(() => {
+    if (selectedConfigId != null && !configs.some(c => c.id === selectedConfigId)) {
+      setSelectedConfigId(null);
+      setSelectedEndpoint(null);
+      setResult(null);
+    }
+  }, [configs, selectedConfigId]);
+
   const loadConfigs = async () => {
     try {
       setLoadingConfigs(true);
-      const data = await manageBacConfigService.getConfigs();
-      setConfigs(data.filter(c => c.is_active));
+      const [allConfigs, mySchools] = await Promise.all([
+        manageBacConfigService.getConfigs(),
+        authService.getMySchools().catch(() => []),
+      ]);
+      const activeConfigs = allConfigs.filter(c => c.is_active);
+      // Filter to schools the user has access to (source 'mb' = ManageBac)
+      const mbSchoolIds = new Set(
+        (mySchools || []).filter(s => s.schoolSource === 'mb').map(s => s.schoolId)
+      );
+      const filtered = mbSchoolIds.size > 0
+        ? activeConfigs.filter(c => c.school_id != null && mbSchoolIds.has(String(c.school_id)))
+        : []; // No school access = show no configs
+      setConfigs(filtered);
     } catch (error: any) {
       console.error('Error loading configs:', error);
     } finally {

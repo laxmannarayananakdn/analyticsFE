@@ -26,6 +26,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { Link as RouterLink } from 'react-router-dom';
 import Link from '@mui/material/Link';
 import { nexquareConfigService, NexquareSchoolConfig } from '../services/NexquareConfigService';
+import { authService } from '../services/AuthService';
 import { apiClient } from '../services/apiClient';
 
 interface ApiEndpoint {
@@ -82,11 +83,31 @@ export default function NexquareDataSync() {
 
   useEffect(() => { loadConfigs(); }, []);
 
+  useEffect(() => {
+    if (selectedConfigId != null && !configs.some(c => c.id === selectedConfigId)) {
+      setSelectedConfigId(null);
+      setSelectedEndpoint(null);
+      setResult(null);
+      setPopulatedSchoolId(null);
+    }
+  }, [configs, selectedConfigId]);
+
   const loadConfigs = async () => {
     try {
       setLoadingConfigs(true);
-      const data = await nexquareConfigService.getConfigs();
-      setConfigs(data.filter(c => c.is_active));
+      const [allConfigs, mySchools] = await Promise.all([
+        nexquareConfigService.getConfigs(),
+        authService.getMySchools().catch(() => []),
+      ]);
+      const activeConfigs = allConfigs.filter(c => c.is_active);
+      // Filter to schools the user has access to (source 'nex' = Nexquare)
+      const nexSchoolIds = new Set(
+        (mySchools || []).filter(s => s.schoolSource === 'nex').map(s => s.schoolId)
+      );
+      const filtered = nexSchoolIds.size > 0
+        ? activeConfigs.filter(c => c.school_id && nexSchoolIds.has(c.school_id))
+        : []; // No school access = show no configs
+      setConfigs(filtered);
     } catch (error: any) {
       console.error('Error loading configs:', error);
     } finally {
