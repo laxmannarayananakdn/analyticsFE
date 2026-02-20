@@ -61,6 +61,8 @@ export interface TriggerParams {
   academicYear?: string;
   all?: boolean;
   includeDescendants?: boolean;
+  endpointsMb?: string[];
+  endpointsNex?: string[];
 }
 
 class SyncService {
