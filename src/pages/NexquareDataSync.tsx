@@ -84,7 +84,7 @@ export default function NexquareDataSync() {
   useEffect(() => { loadConfigs(); }, []);
 
   useEffect(() => {
-    if (selectedConfigId != null && !configs.some(c => c.id === selectedConfigId)) {
+    if (selectedConfigId != null && !configs.some(c => Number(c.id) === Number(selectedConfigId))) {
       setSelectedConfigId(null);
       setSelectedEndpoint(null);
       setResult(null);
@@ -100,13 +100,16 @@ export default function NexquareDataSync() {
         authService.getMySchools().catch(() => []),
       ]);
       const activeConfigs = allConfigs.filter(c => c.is_active);
-      // Filter to schools the user has access to (source 'nex' = Nexquare)
+      // Filter: show configs where user has school access, OR config has no school_id yet (new configs - user can sync to populate)
       const nexSchoolIds = new Set(
         (mySchools || []).filter(s => s.schoolSource === 'nex').map(s => s.schoolId)
       );
-      const filtered = nexSchoolIds.size > 0
-        ? activeConfigs.filter(c => c.school_id && nexSchoolIds.has(c.school_id))
-        : []; // No school access = show no configs
+      const filtered = activeConfigs.filter(c => {
+        const sid = c.school_id != null ? String(c.school_id).trim() : null;
+        const hasNoSchoolId = !sid || sid === '';
+        const hasAccess = nexSchoolIds.size > 0 && sid && nexSchoolIds.has(sid);
+        return hasNoSchoolId || hasAccess;
+      });
       setConfigs(filtered);
     } catch (error: any) {
       console.error('Error loading configs:', error);
@@ -261,7 +264,7 @@ export default function NexquareDataSync() {
     }
   };
 
-  const selectedConfig = configs.find(c => c.id === selectedConfigId);
+  const selectedConfig = configs.find(c => Number(c.id) === Number(selectedConfigId));
 
   type ParamDef = NonNullable<ApiEndpoint['params']>[number];
   const renderParamInput = (param: ParamDef) => {
@@ -309,11 +312,11 @@ export default function NexquareDataSync() {
                       <InputLabel>School</InputLabel>
                       <Select
                         value={selectedConfigId != null ? String(selectedConfigId) : ''}
-                        onChange={(e) => { setSelectedConfigId(e.target.value ? parseInt(e.target.value) : null); setSelectedEndpoint(null); setResult(null); setPopulatedSchoolId(null); }}
+                        onChange={(e) => { const v = e.target.value; setSelectedConfigId(v ? parseInt(v, 10) : null); setSelectedEndpoint(null); setResult(null); setPopulatedSchoolId(null); }}
                         label="School"
                       >
                         <MenuItem value="">-- Select School --</MenuItem>
-                        {configs.map((c) => <MenuItem key={c.id} value={c.id}>{c.school_name} ({c.country})</MenuItem>)}
+                        {configs.map((c) => <MenuItem key={c.id} value={String(c.id)}>{c.school_name} ({c.country})</MenuItem>)}
                       </Select>
                     </FormControl>
                     {selectedConfig && (

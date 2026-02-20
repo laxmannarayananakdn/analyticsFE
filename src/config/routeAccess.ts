@@ -26,6 +26,11 @@ export function getRequiredItemIdForPath(pathname: string): string | null {
   // /superset-dashboard without uuid - will redirect internally
   if (pathname === '/superset-dashboard') return null;
 
+  // /admin/sync-runs/:id -> requires admin:sync-history (detail view)
+  if (pathname.match(/^\/admin\/sync-runs\/[^/]+$/)) {
+    return 'admin:sync-history';
+  }
+
   const adminMatch = pathname.match(/^\/admin\/([^/]+)$/);
   if (adminMatch) {
     return `admin:${adminMatch[1]}`;

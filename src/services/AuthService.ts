@@ -166,6 +166,10 @@ class AuthService {
   /**
    * Get current user's access
    */
+  async getMyNodes(): Promise<Array<{ nodeId: string; nodeDescription: string }>> {
+    return apiClient.get<Array<{ nodeId: string; nodeDescription: string }>>('/api/users/me/nodes');
+  }
+
   async getMyAccess(): Promise<UserAccess[]> {
     return apiClient.get<UserAccess[]>('/api/users/me/access');
   }
@@ -375,9 +379,23 @@ class AuthService {
     return apiClient.put(`/api/access-groups/${encodeURIComponent(groupId)}/pages`, { itemIds });
   }
 
+  /** Items that must appear in Sidebar Page Access (fallback if API returns stale list) */
+  private static readonly REQUIRED_PAGE_ITEMS: Array<{ id: string; label: string }> = [
+    { id: 'admin:sync-schedules', label: 'Sync Schedules' },
+    { id: 'admin:sync-history', label: 'Sync History' },
+  ];
+
   async getAvailablePageItems(): Promise<Array<{ id: string; label: string }>> {
     const res = await apiClient.get<{ items: Array<{ id: string; label: string }> }>('/api/access-groups/available-pages');
-    return res.items ?? [];
+    const items = res.items ?? [];
+    const ids = new Set(items.map((i) => i.id));
+    for (const req of AuthService.REQUIRED_PAGE_ITEMS) {
+      if (!ids.has(req.id)) {
+        items.push(req);
+        ids.add(req.id);
+      }
+    }
+    return items;
   }
 
   async getUserGroups(email: string): Promise<string[]> {

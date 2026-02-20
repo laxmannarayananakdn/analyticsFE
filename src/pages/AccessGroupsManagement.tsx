@@ -63,8 +63,13 @@ export default function AccessGroupsManagement() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
-  useEffect(() => {
+
+  const loadPageItems = () => {
     authService.getAvailablePageItems().then(setPageItems).catch(() => setPageItems([]));
+  };
+
+  useEffect(() => {
+    loadPageItems();
   }, []);
 
   const loadData = async () => {
@@ -106,6 +111,7 @@ export default function AccessGroupsManagement() {
   };
 
   const openCreate = () => {
+    loadPageItems(); // Refresh page items (includes newly added admin pages)
     const accessObj: Record<string, NodeAccess> = {};
     nodes.forEach((n) => {
       accessObj[n.nodeId] = { nodeId: n.nodeId, nodeDescription: n.nodeDescription, departments: [] };
@@ -121,6 +127,7 @@ export default function AccessGroupsManagement() {
 
   const openEdit = async (group: AccessGroup) => {
     setEditingGroup(group);
+    loadPageItems(); // Refresh page items when opening edit (includes newly added admin pages)
     setModalGroupId(group.groupId);
     setModalGroupName(group.groupName);
     setModalGroupDescription(group.groupDescription || '');

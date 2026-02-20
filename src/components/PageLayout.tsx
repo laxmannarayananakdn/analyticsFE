@@ -30,6 +30,8 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import FolderIcon from '@mui/icons-material/Folder';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import HistoryIcon from '@mui/icons-material/History';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import { authService } from '../services/AuthService';
@@ -58,6 +60,8 @@ const adminNavItems: { to: string; label: string; icon: React.ReactNode; itemId:
   { to: '/admin/managebac-config', label: 'ManageBac Configuration', icon: <SettingsIcon />, itemId: 'admin:managebac-config' },
   { to: '/admin/nexquare-sync', label: 'Nexquare Data Sync', icon: <SyncIcon />, itemId: 'admin:nexquare-sync' },
   { to: '/admin/managebac-sync', label: 'ManageBac Data Sync', icon: <SyncIcon />, itemId: 'admin:managebac-sync' },
+  { to: '/admin/sync-schedules', label: 'Sync Schedules', icon: <ScheduleIcon />, itemId: 'admin:sync-schedules' },
+  { to: '/admin/sync-history', label: 'Sync History', icon: <HistoryIcon />, itemId: 'admin:sync-history' },
   { to: '/admin/rp-config', label: 'RP Configuration', icon: <SettingsIcon />, itemId: 'admin:rp-config' },
   { to: '/admin/users', label: 'User Management', icon: <PeopleIcon />, itemId: 'admin:users' },
   { to: '/admin/access-control', label: 'Access Control', icon: <ShieldIcon />, itemId: 'admin:access-control' },

@@ -23,6 +23,9 @@ import MicrosoftTenantConfig from './pages/MicrosoftTenantConfig';
 import NodeManagement from './pages/NodeManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
 import SchoolAssignment from './pages/SchoolAssignment';
+import SyncSchedules from './pages/SyncSchedules';
+import SyncHistory from './pages/SyncHistory';
+import SyncRunDetail from './pages/SyncRunDetail';
 import SupersetDashboard from './pages/SupersetDashboard';
 import SupersetConfig from './pages/SupersetConfig';
 import AccessProtectedRoute from './components/AccessProtectedRoute';
@@ -299,7 +302,37 @@ function AppContent() {
             </AccessProtectedRoute>
           }
         />
-        
+        <Route
+          path="/admin/sync-schedules"
+          element={
+            <AccessProtectedRoute>
+              <PageLayout>
+                <SyncSchedules />
+              </PageLayout>
+            </AccessProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/sync-history"
+          element={
+            <AccessProtectedRoute>
+              <PageLayout>
+                <SyncHistory />
+              </PageLayout>
+            </AccessProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/sync-runs/:id"
+          element={
+            <AccessProtectedRoute>
+              <PageLayout>
+                <SyncRunDetail />
+              </PageLayout>
+            </AccessProtectedRoute>
+          }
+        />
+
         {/* Catch all - redirect to dashboard (protected) */}
         <Route
           path="*"
