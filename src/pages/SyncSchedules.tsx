@@ -65,13 +65,6 @@ function parseEndpoints(val: string | null | undefined): string[] {
   }
 }
 
-const CRON_EXAMPLES = [
-  { expr: '0 2 * * *', label: 'Daily 2:00 AM' },
-  { expr: '0 4 * * *', label: 'Daily 4:00 AM' },
-  { expr: '0 3 * * 0', label: 'Sunday 3:00 AM' },
-  { expr: '0 1 1 * *', label: '1st of month 1:00 AM' },
-];
-
 export default function SyncSchedules() {
   const { showToast } = useToast();
   const [schedules, setSchedules] = useState<SyncSchedule[]>([]);
@@ -328,20 +321,14 @@ export default function SyncSchedules() {
                 fullWidth
                 placeholder="e.g. 2024 or 2024-2025"
               />
-              <FormControl fullWidth>
-                <InputLabel>Cron Expression</InputLabel>
-                <Select
-                  value={form.cron_expression}
-                  label="Cron Expression"
-                  onChange={(e) => setForm((f) => ({ ...f, cron_expression: e.target.value }))}
-                >
-                  {CRON_EXAMPLES.map((c) => (
-                    <MenuItem key={c.expr} value={c.expr}>
-                      {c.label} ({c.expr})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                label="Cron Expression"
+                value={form.cron_expression}
+                onChange={(e) => setForm((f) => ({ ...f, cron_expression: e.target.value }))}
+                placeholder="e.g. 0 2 * * * (daily 2 AM)"
+                helperText="Format: min hr day month dow. Examples: 0 2 * * * = daily 2 AM, 0 14 * * * = daily 2 PM, 30 11 * * 1-5 = 11:30 AM Mon–Fri"
+              />
               <FormControlLabel
                 control={
                   <Checkbox
