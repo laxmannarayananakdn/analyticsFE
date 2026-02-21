@@ -65,7 +65,17 @@ export interface TriggerParams {
   endpointsNex?: string[];
 }
 
+export interface SyncSchedulerInfo {
+  enabled: boolean;
+  timezone: string;
+}
+
 class SyncService {
+  async getSyncInfo(): Promise<SyncSchedulerInfo> {
+    const res = await apiClient.get<{ success: boolean; scheduler: SyncSchedulerInfo }>('/api/sync/info');
+    return res.scheduler || { enabled: false, timezone: 'Asia/Kolkata' };
+  }
+
   async getSchedules(): Promise<SyncSchedule[]> {
     const res = await apiClient.get<{ success: boolean; schedules: SyncSchedule[] }>('/api/sync/schedules');
     return res.schedules || [];

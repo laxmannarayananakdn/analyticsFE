@@ -69,6 +69,7 @@ export default function SyncSchedules() {
   const { showToast } = useToast();
   const [schedules, setSchedules] = useState<SyncSchedule[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
+  const [schedulerInfo, setSchedulerInfo] = useState<{ enabled: boolean; timezone: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -99,12 +100,14 @@ export default function SyncSchedules() {
   const load = async () => {
     try {
       setLoading(true);
-      const [schedRes, nodesRes] = await Promise.all([
+      const [schedRes, nodesRes, infoRes] = await Promise.all([
         syncService.getSchedules(),
         authService.getNodes(false),
+        syncService.getSyncInfo(),
       ]);
       setSchedules(schedRes);
       setNodes(Array.isArray(nodesRes) ? nodesRes : []);
+      setSchedulerInfo(infoRes);
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to load schedules', 'error');
     } finally {
@@ -223,6 +226,15 @@ export default function SyncSchedules() {
               <ScheduleIcon /> Sync Schedules
             </Typography>
             <Typography color="text.secondary">Configure when and what to sync by node and academic year</Typography>
+            {schedulerInfo && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Scheduler: {schedulerInfo.enabled ? (
+                  <>Runs in <strong>{schedulerInfo.timezone}</strong></>
+                ) : (
+                  <strong>Disabled</strong>
+                )}
+              </Typography>
+            )}
           </Box>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
             Add Schedule
