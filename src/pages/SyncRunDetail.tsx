@@ -215,6 +215,7 @@ export default function SyncRunDetail() {
                     <TableCell>School</TableCell>
                     <TableCell>Source</TableCell>
                     <TableCell>Status</TableCell>
+                    <TableCell>Current API</TableCell>
                     <TableCell>Started</TableCell>
                     <TableCell>Completed</TableCell>
                     <TableCell>Error</TableCell>
@@ -227,6 +228,15 @@ export default function SyncRunDetail() {
                       <TableCell>{s.school_source.toUpperCase()}</TableCell>
                       <TableCell>
                         <SchoolStatusChip status={s.status} />
+                      </TableCell>
+                      <TableCell>
+                        {s.current_endpoint ? (
+                          <Typography variant="body2" color="primary.main" fontWeight={500}>
+                            {s.current_endpoint}
+                          </Typography>
+                        ) : (
+                          '—'
+                        )}
                       </TableCell>
                       <TableCell>{formatDate(s.started_at)}</TableCell>
                       <TableCell>{formatDate(s.completed_at)}</TableCell>

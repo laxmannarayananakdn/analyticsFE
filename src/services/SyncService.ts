@@ -46,6 +46,7 @@ export interface SyncRunSchool {
   started_at: string | null;
   completed_at: string | null;
   error_message: string | null;
+  current_endpoint?: string | null;
 }
 
 export interface ListRunsParams {
