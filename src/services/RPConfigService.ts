@@ -1,6 +1,6 @@
 /**
  * RP Configuration Service
- * Handles API calls for managing RP.subject_mapping and RP.assessment_component_config
+ * Handles API calls for managing admin.subject_mapping, admin.assessment_component_config, admin.component_filter_config, admin.term_filter_config
  */
 
 import { apiClient } from './apiClient';
@@ -23,6 +23,22 @@ export interface AssessmentComponentConfig {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface ComponentFilter {
+  id?: number;
+  school_id: string;
+  filter_type: 'include' | 'exclude';
+  pattern: string;
+  display_order?: number;
+}
+
+export interface TermFilter {
+  id?: number;
+  school_id: string;
+  filter_type: 'include' | 'exclude';
+  pattern: string;
+  display_order?: number;
 }
 
 export interface School {
@@ -50,8 +66,7 @@ class RPConfigService {
   }
 
   /**
-   * Get academic years list (from NEX.student_allocations).
-   * @param schoolId - optional; when provided, returns only years for that school
+   * Get academic years from admin.subject_mapping
    */
   async getAcademicYears(schoolId?: string): Promise<string[]> {
     const params = schoolId ? { school_id: schoolId } : undefined;
@@ -60,20 +75,34 @@ class RPConfigService {
   }
 
   /**
-   * Get subject names for a school (from NEX.subjects - populated by Student Allocations).
+   * Get grades from admin.subject_mapping for school + academic year
    */
-  async getSubjects(schoolId: string): Promise<string[]> {
-    const response = await apiClient.get<{ success: boolean; data: string[] }>('/api/rp-config/subjects', { school_id: schoolId });
+  async getGrades(schoolId: string, academicYear?: string): Promise<string[]> {
+    const params: Record<string, string> = { school_id: schoolId };
+    if (academicYear) params.academic_year = academicYear;
+    const response = await apiClient.get<{ success: boolean; data: string[] }>('/api/rp-config/grades', params);
     return response.data;
   }
 
   /**
-   * Get subject mappings
+   * Get subject names (from admin.subject_mapping + NEX.student_assessments)
    */
-  async getSubjectMappings(schoolId?: string, academicYear?: string): Promise<SubjectMapping[]> {
-    const params: any = {};
+  async getSubjects(schoolId: string, academicYear?: string, grade?: string): Promise<string[]> {
+    const params: Record<string, string> = { school_id: schoolId };
+    if (academicYear) params.academic_year = academicYear;
+    if (grade) params.grade = grade;
+    const response = await apiClient.get<{ success: boolean; data: string[] }>('/api/rp-config/subjects', params);
+    return response.data;
+  }
+
+  /**
+   * Get subject mappings (filter by school, academic_year, grade)
+   */
+  async getSubjectMappings(schoolId?: string, academicYear?: string, grade?: string): Promise<SubjectMapping[]> {
+    const params: Record<string, string> = {};
     if (schoolId) params.school_id = schoolId;
     if (academicYear) params.academic_year = academicYear;
+    if (grade) params.grade = grade;
 
     const response = await apiClient.get<RPConfigResponse<SubjectMapping>>('/api/rp-config/subject-mapping', params);
     return response.data;
@@ -122,6 +151,32 @@ class RPConfigService {
    */
   async deleteAssessmentComponentConfig(id: number): Promise<void> {
     await apiClient.delete<{ success: boolean; message: string }>(`/api/rp-config/assessment-component-config/${id}`);
+  }
+
+  async getComponentFilters(schoolId: string): Promise<ComponentFilter[]> {
+    const response = await apiClient.get<{ success: boolean; data: ComponentFilter[] }>('/api/rp-config/component-filters', { school_id: schoolId });
+    return response.data;
+  }
+
+  async saveComponentFilters(filters: ComponentFilter[]): Promise<{ success: boolean; successCount: number; errorCount?: number }> {
+    return apiClient.post('/api/rp-config/component-filters', { filters });
+  }
+
+  async deleteComponentFilter(id: number): Promise<void> {
+    await apiClient.delete(`/api/rp-config/component-filters/${id}`);
+  }
+
+  async getTermFilters(schoolId: string): Promise<TermFilter[]> {
+    const response = await apiClient.get<{ success: boolean; data: TermFilter[] }>('/api/rp-config/term-filters', { school_id: schoolId });
+    return response.data;
+  }
+
+  async saveTermFilters(filters: TermFilter[]): Promise<{ success: boolean; successCount: number; errorCount?: number }> {
+    return apiClient.post('/api/rp-config/term-filters', { filters });
+  }
+
+  async deleteTermFilter(id: number): Promise<void> {
+    await apiClient.delete(`/api/rp-config/term-filters/${id}`);
   }
 }
 

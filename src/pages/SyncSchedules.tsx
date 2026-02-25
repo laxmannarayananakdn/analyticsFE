@@ -79,6 +79,7 @@ export default function SyncSchedules() {
     node_id: string;
     academic_year: string;
     cron_expression: string;
+    load_rp_schema: boolean;
     include_descendants: boolean;
     is_active: boolean;
     endpoints_mb: string[];
@@ -87,6 +88,7 @@ export default function SyncSchedules() {
     node_id: '',
     academic_year: new Date().getFullYear().toString(),
     cron_expression: '0 2 * * *',
+    load_rp_schema: true,
     include_descendants: false,
     is_active: true,
     endpoints_mb: [],
@@ -120,6 +122,7 @@ export default function SyncSchedules() {
       node_id: '',
       academic_year: new Date().getFullYear().toString(),
       cron_expression: '0 2 * * *',
+      load_rp_schema: true,
       include_descendants: true,
       is_active: true,
       endpoints_mb: [],
@@ -134,6 +137,7 @@ export default function SyncSchedules() {
       node_id: s.node_id,
       academic_year: s.academic_year,
       cron_expression: s.cron_expression,
+      load_rp_schema: (s.load_rp_schema as unknown) !== 0,
       include_descendants: !!(s.include_descendants as unknown),
       is_active: s.is_active !== 0,
       endpoints_mb: parseEndpoints(s.endpoints_mb),
@@ -154,6 +158,7 @@ export default function SyncSchedules() {
           node_id: form.node_id,
           academic_year: form.academic_year,
           cron_expression: form.cron_expression,
+          load_rp_schema: form.load_rp_schema,
           include_descendants: form.include_descendants,
           is_active: form.is_active,
           endpoints_mb: form.endpoints_mb.length > 0 ? form.endpoints_mb : null,
@@ -165,6 +170,7 @@ export default function SyncSchedules() {
           node_id: form.node_id,
           academic_year: form.academic_year,
           cron_expression: form.cron_expression,
+          load_rp_schema: form.load_rp_schema,
           include_descendants: form.include_descendants,
           endpoints_mb: form.endpoints_mb.length > 0 ? form.endpoints_mb : null,
           endpoints_nex: form.endpoints_nex.length > 0 ? form.endpoints_nex : null,
@@ -198,6 +204,7 @@ export default function SyncSchedules() {
         nodeId: s.node_id,
         academicYear: s.academic_year,
         includeDescendants: !!(s.include_descendants as unknown),
+        loadRpSchema: (s.load_rp_schema as unknown) !== 0,
         endpointsMb: endpointsMb.length > 0 ? endpointsMb : undefined,
         endpointsNex: endpointsNex.length > 0 ? endpointsNex : undefined,
       });
@@ -349,6 +356,15 @@ export default function SyncSchedules() {
                   />
                 }
                 label="Include descendant nodes"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={form.load_rp_schema}
+                    onChange={(e) => setForm((f) => ({ ...f, load_rp_schema: e.target.checked }))}
+                  />
+                }
+                label="Load RP schema (sync NEX → RP when Student Assessments runs; or RP-only from existing NEX data when only this is checked)"
               />
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1 }} color="text.secondary">

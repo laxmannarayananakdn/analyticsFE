@@ -20,7 +20,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import StopIcon from '@mui/icons-material/Stop';
-import { syncService, SyncRun, SyncRunSchool, SyncRunSchoolEndpoint } from '../services/SyncService';
+import { syncService, SyncRun, SyncRunSchool, SyncRunSchoolEndpoint, NEX_ENDPOINTS_ORDER, MB_ENDPOINTS_ORDER } from '../services/SyncService';
 
 function formatDate(s: string | null): string {
   if (!s) return '—';
@@ -58,15 +58,24 @@ function SchoolEndpointsRow({ school }: { school: SyncRunSchool }) {
   const endpoints = ((): SyncRunSchoolEndpoint[] => {
     const raw = school.endpoints_completed;
     if (!raw) return [];
-    if (Array.isArray(raw)) return raw;
-    if (typeof raw === 'string') {
+    let arr: SyncRunSchoolEndpoint[];
+    if (Array.isArray(raw)) {
+      arr = raw;
+    } else if (typeof raw === 'string') {
       try {
-        return JSON.parse(raw);
+        arr = JSON.parse(raw);
       } catch {
         return [];
       }
+    } else {
+      return [];
     }
-    return [];
+    const order = school.school_source === 'nex' ? NEX_ENDPOINTS_ORDER : MB_ENDPOINTS_ORDER;
+    const orderIdx = (ep: string) => {
+      const i = order.indexOf(ep);
+      return i >= 0 ? i : order.length;
+    };
+    return [...arr].sort((a, b) => orderIdx(a.endpoint) - orderIdx(b.endpoint));
   })();
 
   if (endpoints.length === 0) return null;

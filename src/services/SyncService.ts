@@ -11,6 +11,7 @@ export interface SyncSchedule {
   cron_expression: string;
   endpoints_mb: string | null;
   endpoints_nex: string | null;
+  load_rp_schema: boolean | number;
   include_descendants: boolean | number;
   is_active: boolean | number;
   created_at?: string;
@@ -42,6 +43,17 @@ export interface SyncRunSchoolEndpoint {
   error?: string;
 }
 
+/** Canonical order for Nexquare endpoints (matches backend NEX_ENDPOINTS_ALL) */
+export const NEX_ENDPOINTS_ORDER = [
+  'schools', 'students', 'staff', 'classes', 'allocation-master',
+  'student-allocations', 'staff-allocations', 'daily-plans', 'daily-attendance', 'student-assessments',
+];
+
+/** Canonical order for ManageBac endpoints */
+export const MB_ENDPOINTS_ORDER = [
+  'school', 'academic-years', 'grades', 'subjects', 'teachers', 'year-groups', 'students', 'classes',
+];
+
 export interface SyncRunSchool {
   id: number;
   sync_run_id: number;
@@ -70,6 +82,7 @@ export interface TriggerParams {
   academicYear?: string;
   all?: boolean;
   includeDescendants?: boolean;
+  loadRpSchema?: boolean;
   endpointsMb?: string[];
   endpointsNex?: string[];
 }
@@ -96,6 +109,7 @@ class SyncService {
     cron_expression: string;
     endpoints_mb?: string[] | null;
     endpoints_nex?: string[] | null;
+    load_rp_schema?: boolean;
     include_descendants?: boolean;
   }): Promise<SyncSchedule> {
     const res = await apiClient.post<{ success: boolean; schedule: SyncSchedule }>('/api/sync/schedules', data);
@@ -110,6 +124,7 @@ class SyncService {
       cron_expression: string;
       endpoints_mb: string[] | null;
       endpoints_nex: string[] | null;
+      load_rp_schema: boolean;
       include_descendants: boolean;
       is_active: boolean;
     }>
