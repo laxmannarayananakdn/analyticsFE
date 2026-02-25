@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import Box from '@mui/material/Box';
@@ -13,10 +13,14 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
+import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import StopIcon from '@mui/icons-material/Stop';
-import { syncService, SyncRun, SyncRunSchool } from '../services/SyncService';
+import { syncService, SyncRun, SyncRunSchool, SyncRunSchoolEndpoint } from '../services/SyncService';
 
 function formatDate(s: string | null): string {
   if (!s) return '—';
@@ -35,6 +39,90 @@ function SchoolStatusChip({ status }: { status: SyncRunSchool['status'] }) {
     status === 'failed' ? 'error' :
     status === 'skipped' ? 'warning' : 'default';
   return <Chip label={status} size="small" color={color} />;
+}
+
+function formatDuration(started: string, completed: string): string {
+  try {
+    const s = new Date(started).getTime();
+    const c = new Date(completed).getTime();
+    const sec = Math.round((c - s) / 1000);
+    if (sec < 60) return `${sec}s`;
+    return `${Math.floor(sec / 60)}m ${sec % 60}s`;
+  } catch {
+    return '—';
+  }
+}
+
+function SchoolEndpointsRow({ school }: { school: SyncRunSchool }) {
+  const [open, setOpen] = useState(false);
+  const endpoints = ((): SyncRunSchoolEndpoint[] => {
+    const raw = school.endpoints_completed;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  })();
+
+  if (endpoints.length === 0) return null;
+
+  return (
+    <>
+      <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+        <TableCell colSpan={7} sx={{ py: 0 }}>
+          <IconButton size="small" onClick={() => setOpen(!open)} aria-label={open ? 'collapse' : 'expand'}>
+            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          </IconButton>
+          <Typography component="span" variant="body2" color="text.secondary">
+            {open ? 'Hide' : 'Show'} API timing ({endpoints.length} endpoints)
+          </Typography>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell colSpan={7} sx={{ py: 0 }}>
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            <Box sx={{ pl: 4, pr: 2, pb: 2 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>API</TableCell>
+                    <TableCell>Started</TableCell>
+                    <TableCell>Completed</TableCell>
+                    <TableCell>Duration</TableCell>
+                    <TableCell>Error</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {endpoints.map((ep, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{ep.endpoint}</TableCell>
+                      <TableCell>{formatDate(ep.started_at)}</TableCell>
+                      <TableCell>{formatDate(ep.completed_at)}</TableCell>
+                      <TableCell>{formatDuration(ep.started_at, ep.completed_at)}</TableCell>
+                      <TableCell>
+                        {ep.error ? (
+                          <Typography variant="body2" color="error" sx={{ maxWidth: 280 }} noWrap title={ep.error}>
+                            {ep.error}
+                          </Typography>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
 }
 
 const POLL_INTERVAL_MS = 5000;
@@ -223,33 +311,36 @@ export default function SyncRunDetail() {
                 </TableHead>
                 <TableBody>
                   {schools.map((s) => (
-                    <TableRow key={s.id} hover>
-                      <TableCell>{s.school_name || s.school_id}</TableCell>
-                      <TableCell>{s.school_source.toUpperCase()}</TableCell>
-                      <TableCell>
-                        <SchoolStatusChip status={s.status} />
-                      </TableCell>
-                      <TableCell>
-                        {s.current_endpoint ? (
-                          <Typography variant="body2" color="primary.main" fontWeight={500}>
-                            {s.current_endpoint}
-                          </Typography>
-                        ) : (
-                          '—'
-                        )}
-                      </TableCell>
-                      <TableCell>{formatDate(s.started_at)}</TableCell>
-                      <TableCell>{formatDate(s.completed_at)}</TableCell>
-                      <TableCell>
-                        {s.error_message ? (
-                          <Typography variant="body2" color="error" sx={{ maxWidth: 300 }} noWrap title={s.error_message}>
-                            {s.error_message}
-                          </Typography>
-                        ) : (
-                          '—'
-                        )}
-                      </TableCell>
-                    </TableRow>
+                    <React.Fragment key={s.id}>
+                      <TableRow hover>
+                        <TableCell>{s.school_name || s.school_id}</TableCell>
+                        <TableCell>{s.school_source.toUpperCase()}</TableCell>
+                        <TableCell>
+                          <SchoolStatusChip status={s.status} />
+                        </TableCell>
+                        <TableCell>
+                          {s.current_endpoint ? (
+                            <Typography variant="body2" color="primary.main" fontWeight={500}>
+                              {s.current_endpoint}
+                            </Typography>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                        <TableCell>{formatDate(s.started_at)}</TableCell>
+                        <TableCell>{formatDate(s.completed_at)}</TableCell>
+                        <TableCell>
+                          {s.error_message ? (
+                            <Typography variant="body2" color="error" sx={{ maxWidth: 300 }} noWrap title={s.error_message}>
+                              {s.error_message}
+                            </Typography>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      <SchoolEndpointsRow school={s} />
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>

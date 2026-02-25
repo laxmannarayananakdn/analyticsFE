@@ -35,6 +35,13 @@ export interface SyncRun {
   schools?: SyncRunSchool[];
 }
 
+export interface SyncRunSchoolEndpoint {
+  endpoint: string;
+  started_at: string;
+  completed_at: string;
+  error?: string;
+}
+
 export interface SyncRunSchool {
   id: number;
   sync_run_id: number;
@@ -47,6 +54,7 @@ export interface SyncRunSchool {
   completed_at: string | null;
   error_message: string | null;
   current_endpoint?: string | null;
+  endpoints_completed?: SyncRunSchoolEndpoint[] | null;
 }
 
 export interface ListRunsParams {
