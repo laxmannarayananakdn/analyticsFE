@@ -52,9 +52,7 @@ export default function RPConfig() {
   const toastIdRef = useRef(0);
 
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>('');
-  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('');
   const [schools, setSchools] = useState<School[]>([]);
-  const [academicYears, setAcademicYears] = useState<string[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [, setSubjectMappings] = useState<SubjectMapping[]>([]);
   const [, setComponentConfigs] = useState<AssessmentComponentConfig[]>([]);
@@ -68,28 +66,24 @@ export default function RPConfig() {
   useEffect(() => {
     if (selectedSchoolId && !schools.some(s => s.school_id === selectedSchoolId)) {
       setSelectedSchoolId('');
-      setSelectedAcademicYear('');
     }
   }, [schools, selectedSchoolId]);
 
   useEffect(() => {
     if (selectedSchoolId) {
-      loadAcademicYears(selectedSchoolId);
       loadSubjects(selectedSchoolId);
     } else {
-      setAcademicYears([]);
       setSubjects([]);
-      setSelectedAcademicYear('');
     }
   }, [selectedSchoolId]);
 
   useEffect(() => {
-    if (activeTab === 'subject-mapping' && selectedSchoolId && selectedAcademicYear) {
+    if (activeTab === 'subject-mapping' && selectedSchoolId) {
       loadSubjectMappings();
     } else if (activeTab === 'component-config' && selectedSchoolId) {
       loadComponentConfigs();
     }
-  }, [activeTab, selectedSchoolId, selectedAcademicYear]);
+  }, [activeTab, selectedSchoolId]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = `toast-${Date.now()}-${toastIdRef.current++}`;
@@ -117,16 +111,6 @@ export default function RPConfig() {
     }
   };
 
-  const loadAcademicYears = async (schoolId: string) => {
-    try {
-      const data = await rpConfigService.getAcademicYears(schoolId);
-      setAcademicYears(data);
-    } catch (error: any) {
-      showToast('Failed to load academic years', 'error');
-      console.error('Error loading academic years:', error);
-    }
-  };
-
   const loadSubjects = async (schoolId: string) => {
     try {
       const data = await rpConfigService.getSubjects(schoolId);
@@ -140,7 +124,7 @@ export default function RPConfig() {
   const loadSubjectMappings = async () => {
     try {
       setLoading(true);
-      const data = await rpConfigService.getSubjectMappings(selectedSchoolId, selectedAcademicYear);
+      const data = await rpConfigService.getSubjectMappings(selectedSchoolId);
       setSubjectMappings(data);
       setEditableMappings([...data]);
     } catch (error: any) {
@@ -208,13 +192,13 @@ export default function RPConfig() {
   };
 
   const handleAddSubjectMapping = () => {
-    if (!selectedSchoolId || !selectedAcademicYear) {
-      showToast('Please select school and academic year first', 'error');
+    if (!selectedSchoolId) {
+      showToast('Please select school first', 'error');
       return;
     }
     setEditableMappings([
       ...editableMappings,
-      { school_id: selectedSchoolId, academic_year: selectedAcademicYear, grade: '', subject: '', reported_subject: null }
+      { school_id: selectedSchoolId, academic_year: '', grade: '', subject: '', reported_subject: null }
     ]);
   };
 
@@ -224,6 +208,12 @@ export default function RPConfig() {
       return;
     }
     setEditableConfigs([...editableConfigs, { school_id: selectedSchoolId, component_name: '', is_active: true }]);
+  };
+
+  const handleRemoveSubjectMapping = (index: number) => {
+    const mapping = editableMappings[index];
+    if (mapping.id) return; // Only remove unsaved rows
+    setEditableMappings(editableMappings.filter((_, i) => i !== index));
   };
 
   const handleDeleteSubjectMapping = async (id: number) => {
@@ -271,7 +261,7 @@ export default function RPConfig() {
             RP Configuration Management
           </Typography>
           <Typography color="text.secondary">
-            Manage subject mappings and assessment component configurations. Schools and academic years come from Nexquare (Get Schools &amp; Student Allocations).
+            Manage subject mappings and assessment component configurations. Schools come from Nexquare. Academic year is entered when adding rows.
           </Typography>
         </Box>
 
@@ -287,7 +277,7 @@ export default function RPConfig() {
 
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr 1fr auto' }, gap: 2, alignItems: 'flex-end' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr auto' }, gap: 2, alignItems: 'flex-end' }}>
               <FormControl fullWidth>
                 <InputLabel>School *</InputLabel>
                 <Select value={selectedSchoolId} onChange={(e) => setSelectedSchoolId(e.target.value)} label="School *">
@@ -299,26 +289,10 @@ export default function RPConfig() {
                   ))}
                 </Select>
               </FormControl>
-              {activeTab === 'subject-mapping' && (
-                <FormControl fullWidth>
-                  <InputLabel>Academic Year *</InputLabel>
-                  <Select value={selectedAcademicYear} onChange={(e) => setSelectedAcademicYear(e.target.value)} label="Academic Year *">
-                    <MenuItem value="">Select academic year</MenuItem>
-                    {academicYears.map((year) => (
-                      <MenuItem key={year} value={year}>{year}</MenuItem>
-                    ))}
-                  </Select>
-                  {selectedSchoolId && academicYears.length === 0 && (
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                      No years found. Run Student Allocations for this school in Nexquare Data Sync.
-                    </Typography>
-                  )}
-                </FormControl>
-              )}
               <Button
                 variant="contained"
                 onClick={() => (activeTab === 'subject-mapping' ? loadSubjectMappings() : loadComponentConfigs())}
-                disabled={loading || (activeTab === 'subject-mapping' ? !selectedSchoolId || !selectedAcademicYear : !selectedSchoolId)}
+                disabled={loading || !selectedSchoolId}
                 startIcon={<RefreshIcon />}
               >
                 Refresh
@@ -338,7 +312,7 @@ export default function RPConfig() {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">Subject Mappings</Typography>
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button variant="contained" color="success" onClick={handleAddSubjectMapping} disabled={!selectedSchoolId || !selectedAcademicYear} startIcon={<AddIcon />}>
+                    <Button variant="contained" color="success" onClick={handleAddSubjectMapping} disabled={!selectedSchoolId} startIcon={<AddIcon />}>
                       Add Row
                     </Button>
                     <Button variant="contained" onClick={handleSaveSubjectMappings} disabled={loading || editableMappings.length === 0} startIcon={<SaveIcon />}>
@@ -350,12 +324,13 @@ export default function RPConfig() {
                   <Typography color="text.secondary" textAlign="center" py={4}>Loading...</Typography>
                 ) : editableMappings.length === 0 ? (
                   <Typography color="text.secondary" textAlign="center" py={4}>
-                    No subject mappings found. Select school and academic year, then click "Add Row" to create one.
+                    No subject mappings found. Select school, then click "Add Row" to create one. Enter academic year in each row.
                   </Typography>
                 ) : (
                   <Table size="small">
                     <TableHead>
                       <TableRow>
+                        <TableCell>Academic Year</TableCell>
                         <TableCell>Grade</TableCell>
                         <TableCell>Subject</TableCell>
                         <TableCell>Reported Subject</TableCell>
@@ -365,6 +340,7 @@ export default function RPConfig() {
                     <TableBody>
                       {editableMappings.map((mapping, index) => (
                         <TableRow key={mapping.id || index}>
+                          <TableCell><TextField size="small" fullWidth value={mapping.academic_year || ''} onChange={(e) => updateSubjectMapping(index, 'academic_year', e.target.value)} placeholder="e.g., 2024-2025" /></TableCell>
                           <TableCell><TextField size="small" fullWidth value={mapping.grade} onChange={(e) => updateSubjectMapping(index, 'grade', e.target.value)} placeholder="e.g., 10, 12" /></TableCell>
                           <TableCell>
                             <Autocomplete
@@ -381,8 +357,12 @@ export default function RPConfig() {
                           </TableCell>
                           <TableCell><TextField size="small" fullWidth value={mapping.reported_subject || ''} onChange={(e) => updateSubjectMapping(index, 'reported_subject', e.target.value || null)} placeholder="Optional" /></TableCell>
                           <TableCell>
-                            {mapping.id && (
+                            {mapping.id ? (
                               <IconButton size="small" color="error" onClick={() => handleDeleteSubjectMapping(mapping.id!)} title="Delete">
+                                <DeleteIcon />
+                              </IconButton>
+                            ) : (
+                              <IconButton size="small" onClick={() => handleRemoveSubjectMapping(index)} title="Remove unsaved row">
                                 <DeleteIcon />
                               </IconButton>
                             )}
