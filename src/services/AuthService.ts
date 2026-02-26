@@ -13,6 +13,7 @@ export interface User {
   isTemporaryPassword?: boolean;
   createdDate?: string;
   lastLogin?: string;
+  supersetRoleIds?: number[];
 }
 
 export interface LoginResponse {
@@ -223,7 +224,7 @@ class AuthService {
    */
   async updateUser(
     email: string,
-    data: { displayName?: string; isActive?: boolean; authType?: 'AppRegistration' | 'Password' }
+    data: { displayName?: string; isActive?: boolean; authType?: 'AppRegistration' | 'Password'; supersetRoleIds?: number[] }
   ): Promise<{ user: User; temporaryPassword?: string }> {
     return apiClient.put<{ user: User; temporaryPassword?: string }>(
       `/api/users/${encodeURIComponent(email)}`,

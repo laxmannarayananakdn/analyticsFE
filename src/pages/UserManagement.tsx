@@ -58,8 +58,10 @@ export default function UserManagement() {
   const [editDisplayName, setEditDisplayName] = useState('');
   const [editAuthType, setEditAuthType] = useState<'Password' | 'AppRegistration'>('Password');
   const [editIsActive, setEditIsActive] = useState(true);
+  const [editSupersetRoleIds, setEditSupersetRoleIds] = useState<number[]>([]);
   const [editError, setEditError] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [editLoadingUser, setEditLoadingUser] = useState(false);
   const [editTempPassword, setEditTempPassword] = useState<string | null>(null);
   const [editCopied, setEditCopied] = useState(false);
 
@@ -70,6 +72,12 @@ export default function UserManagement() {
       authService.getSupersetRoles().then(setSupersetRoles).catch(() => setSupersetRoles([]));
     }
   }, [showCreateModal]);
+
+  useEffect(() => {
+    if (showEditModal && supersetRoles.length === 0) {
+      authService.getSupersetRoles().then(setSupersetRoles).catch(() => setSupersetRoles([]));
+    }
+  }, [showEditModal]);
 
   const loadUsers = async () => {
     try {
@@ -94,15 +102,28 @@ export default function UserManagement() {
     }
   };
 
-  const openEditModal = (user: User) => {
+  const openEditModal = async (user: User) => {
     setEditingUser(user);
     setEditDisplayName(user.displayName || '');
     setEditAuthType(user.authType);
     setEditIsActive(user.isActive);
+    setEditSupersetRoleIds(user.supersetRoleIds ?? []);
     setEditError(null);
     setEditTempPassword(null);
     setEditCopied(false);
     setShowEditModal(true);
+    setEditLoadingUser(true);
+    try {
+      const fullUser = await authService.getUser(user.email);
+      setEditDisplayName(fullUser.displayName || '');
+      setEditAuthType(fullUser.authType);
+      setEditIsActive(fullUser.isActive);
+      setEditSupersetRoleIds(fullUser.supersetRoleIds ?? []);
+    } catch {
+      // Keep list data if fetch fails
+    } finally {
+      setEditLoadingUser(false);
+    }
   };
 
   const closeEditModal = () => {
@@ -111,6 +132,7 @@ export default function UserManagement() {
     setEditDisplayName('');
     setEditAuthType('Password');
     setEditIsActive(true);
+    setEditSupersetRoleIds([]);
     setEditError(null);
     setEditTempPassword(null);
   };
@@ -125,6 +147,7 @@ export default function UserManagement() {
         displayName: editDisplayName.trim() || undefined,
         authType: editAuthType,
         isActive: editIsActive,
+        supersetRoleIds: editSupersetRoleIds,
       });
       const updated = result.user;
       setUsers((prev) => prev.map((u) => (u.email === updated.email ? updated : u)));
@@ -388,6 +411,30 @@ export default function UserManagement() {
                     <MenuItem value="Inactive">Inactive</MenuItem>
                   </Select>
                 </FormControl>
+                {supersetRoles.length > 0 && (
+                  <FormControl fullWidth disabled={editLoadingUser}>
+                    <InputLabel>Superset roles</InputLabel>
+                    <Select
+                      multiple
+                      value={editSupersetRoleIds}
+                      onChange={(e) => setEditSupersetRoleIds(e.target.value as number[])}
+                      label="Superset roles"
+                      renderValue={(selected) => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {(selected as number[]).map((id) => {
+                            const r = supersetRoles.find((x) => x.id === id);
+                            return <Chip key={id} label={r?.name ?? id} size="small" />;
+                          })}
+                        </Box>
+                      )}
+                    >
+                      {supersetRoles.map((r) => (
+                        <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>
+                      ))}
+                    </Select>
+                    <Typography variant="caption" color="text.secondary">Roles for embedded dashboards</Typography>
+                  </FormControl>
+                )}
                 {editAuthType === 'Password' && editingUser?.authType === 'AppRegistration' && (
                   <Typography variant="caption" color="warning.main">Changing to Password will generate a temporary password. Share it with the user.</Typography>
                 )}
