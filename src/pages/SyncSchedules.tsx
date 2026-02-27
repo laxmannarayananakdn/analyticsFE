@@ -364,7 +364,7 @@ export default function SyncSchedules() {
                     onChange={(e) => setForm((f) => ({ ...f, load_rp_schema: e.target.checked }))}
                   />
                 }
-                label="Load RP schema (sync NEX → RP when Student Assessments runs; or RP-only from existing NEX data when only this is checked)"
+                label="Run RP refresh after sync (populates RP tables from NEX for each school + AY)"
               />
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1 }} color="text.secondary">

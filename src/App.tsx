@@ -332,7 +332,6 @@ function AppContent() {
             </AccessProtectedRoute>
           }
         />
-
         {/* Catch all - redirect to dashboard (protected) */}
         <Route
           path="*"
