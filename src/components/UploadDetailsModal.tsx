@@ -26,6 +26,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
+import PublishIcon from '@mui/icons-material/Publish';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SearchIcon from '@mui/icons-material/Search';
@@ -56,6 +57,7 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [promoting, setPromoting] = useState(false);
   const [showAllColumns, setShowAllColumns] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['student', 'grades']));
 
@@ -163,7 +165,24 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
     if (!fileType) return [];
     if (fileType.type_code === 'CEM_INITIAL') return ['Student_ID', 'Name', 'Class', 'Subject', 'Level', 'Test_Score', 'Test_Prediction_Grade'];
     if (fileType.type_code === 'CEM_FINAL') return ['Student_ID', 'Name', 'Subject_Title', 'Grade', 'Adaptive_Prediction', 'Adaptive_Residual'];
+    if (fileType.type_code === 'HR_EMPLOYEE_DATA') return ['Country', 'Entity', 'Emp_ID', 'Position_Category', 'Staff_Category', 'Gender'];
+    if (fileType.type_code === 'HR_BUDGET_VS_ACTUAL') return ['Country', 'Category', 'Budget', 'Actual', 'Key'];
     return [];
+  };
+
+  const isHRUpload = fileType?.type_code === 'HR_EMPLOYEE_DATA' || fileType?.type_code === 'HR_BUDGET_VS_ACTUAL';
+
+  const handlePromoteToRP = async () => {
+    try {
+      setPromoting(true);
+      const result = await efService.promoteToRP(upload.id);
+      showToast(result.message || `Promoted ${result.rowCount} records to RP schema`, 'success');
+      onRefresh?.();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || err.message || 'Failed to promote to RP', 'error');
+    } finally {
+      setPromoting(false);
+    }
   };
 
   const formatCEMFinalName = (row: any): string => {
@@ -188,6 +207,8 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
       }
       return allCols;
     }
+    if (fileType.type_code === 'HR_EMPLOYEE_DATA') return ['Year', 'Quarter', 'Month', 'Country', 'Country_City', 'Entity', 'Emp_ID', 'Position_Category', 'Attrition', 'FTE', 'Date_of_Birth', 'Date_of_Hire', 'Sect', 'Staff_Nationality', 'Gender', 'Teaching_Level', 'Teaching_Subject_Category', 'Qualification', 'Date_of_Separation', 'reason_for_leaving', 'Aging', 'Age_Grouping', 'Longevity', 'Longevity_Grouping', 'Reason_type', 'Reporting_Year', 'recruitment', 'separation', 'Staff_Category', 'Contract_type'];
+    if (fileType.type_code === 'HR_BUDGET_VS_ACTUAL') return ['Year', 'Quarter', 'Country', 'Category', 'Budget', 'Actual', 'Key'];
     return [];
   };
 
@@ -281,11 +302,18 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
 
         {upload.status === 'COMPLETED' && (
           <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
               <Typography variant="subtitle1" fontWeight={600}>Data Preview</Typography>
-              <Button variant="contained" color="success" onClick={handleExportCSV} disabled={exporting || data.length === 0} startIcon={exporting ? <CircularProgress size={16} /> : <DownloadIcon />}>
-                Export CSV
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {isHRUpload && (
+                  <Button variant="contained" color="primary" onClick={handlePromoteToRP} disabled={promoting} startIcon={promoting ? <CircularProgress size={16} /> : <PublishIcon />}>
+                    {promoting ? 'Promoting...' : 'Promote to RP'}
+                  </Button>
+                )}
+                <Button variant="contained" color="success" onClick={handleExportCSV} disabled={exporting || data.length === 0} startIcon={exporting ? <CircularProgress size={16} /> : <DownloadIcon />}>
+                  Export CSV
+                </Button>
+              </Box>
             </Box>
             <TextField
               fullWidth
@@ -296,7 +324,7 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
               sx={{ mb: 2 }}
               InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> }}
             />
-            {(fileType?.type_code === 'CEM_INITIAL' || fileType?.type_code === 'CEM_FINAL') && (
+            {(fileType?.type_code === 'CEM_INITIAL' || fileType?.type_code === 'CEM_FINAL' || isHRUpload) && (
               <FormControlLabel
                 control={<Checkbox checked={showAllColumns} onChange={(e) => setShowAllColumns(e.target.checked)} />}
                 label={`Show All Columns (${getAllColumns().length} total)`}
@@ -314,6 +342,27 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
               </Box>
             ) : displayData.length === 0 ? (
               <Typography color="text.secondary" textAlign="center" py={4}>No data found</Typography>
+            ) : isHRUpload && !showAllColumns ? (
+              <Box>
+                <Paper variant="outlined" sx={{ mb: 2, overflow: 'hidden' }}>
+                  <Box sx={{ p: 2, bgcolor: 'action.hover' }}><Typography fontWeight={500}>Key Information</Typography></Box>
+                  <Box sx={{ overflowX: 'auto' }}>
+                    {renderDataTable(getKeyColumns(), (row, col) => row[col])}
+                  </Box>
+                </Paper>
+                {totalPages > 1 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton size="small" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeftIcon /></IconButton>
+                      <Typography sx={{ alignSelf: 'center' }}>Page {page} of {totalPages}</Typography>
+                      <IconButton size="small" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}><ChevronRightIcon /></IconButton>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
             ) : fileType?.type_code === 'CEM_FINAL' && !showAllColumns ? (
               <Box>
                 <Paper variant="outlined" sx={{ mb: 2, overflow: 'hidden' }}>

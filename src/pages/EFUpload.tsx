@@ -173,7 +173,9 @@ export default function EFUpload() {
       case 'CEM_INITIAL':
       case 'CEM_FINAL': return '.xls';
       case 'IB_EXTERNAL_EXAMS': return '.csv';
-      case 'MSNAV_FINANCIAL_AID': return '.xlsx';
+      case 'MSNAV_FINANCIAL_AID':
+      case 'HR_EMPLOYEE_DATA':
+      case 'HR_BUDGET_VS_ACTUAL': return '.xlsx';
       default: return '';
     }
   };

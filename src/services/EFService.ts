@@ -189,6 +189,16 @@ class EFService {
       `/api/ef/uploads/${uploadId}`
     );
   }
+
+  /**
+   * Promote HR upload to RP schema (copy EF data to RP, full replace)
+   */
+  async promoteToRP(uploadId: number): Promise<{ success: boolean; message: string; rowCount: number; fileType: string }> {
+    const response = await apiClient.post<{ success: boolean; message: string; rowCount: number; fileType: string }>(
+      `/api/ef/uploads/${uploadId}/promote-to-rp`
+    );
+    return response;
+  }
 }
 
 export const efService = new EFService();

@@ -60,8 +60,9 @@ export default function SupersetDashboard() {
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
           if (response.status === 403 && errData?.code === 'SUPERSET_ACCESS_DENIED') {
-            const email = errData?.userEmail || 'unknown';
-            throw new Error(`User ${email} does not have access to this dashboard.`);
+            const hint = errData?.hint;
+            const baseMsg = `User ${errData?.userEmail || 'unknown'} does not have access to this dashboard.`;
+            throw new Error(hint ? `${baseMsg} ${hint}` : baseMsg);
           }
           throw new Error(errData?.error || `Failed to get token: ${response.statusText}`);
         }
