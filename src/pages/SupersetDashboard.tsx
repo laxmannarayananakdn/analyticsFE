@@ -83,6 +83,9 @@ export default function SupersetDashboard() {
               hideChartControls: false,
               hideTab: false,
               filters: { visible: true, expanded: false },
+              // Pass token in URL - Superset may read it here when postMessage is delayed.
+              // Remove if token-in-URL is a concern (logs, history).
+              urlParams: { guest_token: token },
             },
           });
         }
