@@ -23,6 +23,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SchoolIcon from '@mui/icons-material/School';
 import WorkIcon from '@mui/icons-material/Work';
+import PublicIcon from '@mui/icons-material/Public';
 import { authService, Node } from '../services/AuthService';
 
 export default function NodeManagement() {
@@ -66,7 +67,7 @@ export default function NodeManagement() {
     });
   };
 
-  const handleCreateNode = async (nodeData: { nodeId: string; nodeDescription: string; isHeadOffice: boolean; isSchoolNode: boolean; parentNodeId: string | null }) => {
+  const handleCreateNode = async (nodeData: { nodeId: string; nodeDescription: string; isHeadOffice: boolean; isSchoolNode: boolean; isCentralOffice?: boolean; countryCode?: string | null; parentNodeId: string | null }) => {
     try {
       await authService.createNode(nodeData);
       setShowCreateModal(false);
@@ -77,7 +78,7 @@ export default function NodeManagement() {
     }
   };
 
-  const handleUpdateNode = async (nodeId: string, updates: { isHeadOffice?: boolean; isSchoolNode?: boolean }) => {
+  const handleUpdateNode = async (nodeId: string, updates: { isHeadOffice?: boolean; isSchoolNode?: boolean; isCentralOffice?: boolean; countryCode?: string | null }) => {
     try {
       await authService.updateNode(nodeId, updates);
       loadNodes();
@@ -148,17 +149,21 @@ function NodeItem({ node, level, expandedNodes, onToggleExpand, headOfficeNodeId
   node: Node; level: number; expandedNodes: Set<string>; onToggleExpand: (id: string) => void;
   headOfficeNodeId: string | null; onUpdateNode: (id: string, u: any) => void; showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
 }) {
+  const [countryCodeInput, setCountryCodeInput] = useState(node.countryCode || '');
+  useEffect(() => { setCountryCodeInput(node.countryCode || ''); }, [node.countryCode]);
+
   const indent = level * 24;
   const isExpanded = expandedNodes.has(node.nodeId);
   const hasChildren = node.children && node.children.length > 0;
   const isHeadOffice = node.isHeadOffice;
   const isSchoolNode = node.isSchoolNode || false;
+  const isCentralOffice = node.isCentralOffice || false;
   const canSetHeadOffice = !headOfficeNodeId || headOfficeNodeId === node.nodeId;
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, bgcolor: 'action.hover', borderRadius: 1, mb: 0.5, ml: `${indent}px` }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, bgcolor: 'action.hover', borderRadius: 1, mb: 0.5, ml: `${indent}px`, flexWrap: 'wrap', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 200 }}>
           {hasChildren ? (
             <Button size="small" onClick={() => onToggleExpand(node.nodeId)} sx={{ minWidth: 32, p: 0.5 }}>
               {isExpanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
@@ -166,18 +171,20 @@ function NodeItem({ node, level, expandedNodes, onToggleExpand, headOfficeNodeId
           ) : (
             <Box sx={{ width: 32 }} />
           )}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Typography fontWeight={500}>{node.nodeDescription}</Typography>
             <Typography variant="body2" color="text.secondary">({node.nodeId})</Typography>
             {isHeadOffice && <Box component="span" sx={{ px: 1, py: 0.25, bgcolor: 'warning.dark', color: 'white', borderRadius: 1, fontSize: 12, display: 'flex', alignItems: 'center', gap: 0.5 }}><BusinessIcon sx={{ fontSize: 14 }} /> HQ</Box>}
             {isSchoolNode ? (
               <Box component="span" sx={{ px: 1, py: 0.25, bgcolor: 'primary.dark', color: 'white', borderRadius: 1, fontSize: 12, display: 'flex', alignItems: 'center', gap: 0.5 }}><SchoolIcon sx={{ fontSize: 14 }} /> School</Box>
+            ) : isCentralOffice ? (
+              <Box component="span" sx={{ px: 1, py: 0.25, bgcolor: 'info.dark', color: 'white', borderRadius: 1, fontSize: 12, display: 'flex', alignItems: 'center', gap: 0.5 }}><PublicIcon sx={{ fontSize: 14 }} /> Country</Box>
             ) : (
               <Box component="span" sx={{ px: 1, py: 0.25, bgcolor: 'action.selected', borderRadius: 1, fontSize: 12, display: 'flex', alignItems: 'center', gap: 0.5 }}><WorkIcon sx={{ fontSize: 14 }} /> Office</Box>
             )}
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           <FormControlLabel
             control={
               <Checkbox
@@ -198,6 +205,24 @@ function NodeItem({ node, level, expandedNodes, onToggleExpand, headOfficeNodeId
             control={<Checkbox checked={isSchoolNode} onChange={(e) => onUpdateNode(node.nodeId, { isSchoolNode: e.target.checked })} />}
             label={<Typography variant="body2">School Node</Typography>}
           />
+          <FormControlLabel
+            control={<Checkbox checked={isCentralOffice} onChange={(e) => onUpdateNode(node.nodeId, { isCentralOffice: e.target.checked })} />}
+            label={<Typography variant="body2">Central Office</Typography>}
+          />
+          {isCentralOffice && (
+            <TextField
+              size="small"
+              placeholder="Country (e.g. Kenya)"
+              value={countryCodeInput}
+              onChange={(e) => setCountryCodeInput(e.target.value)}
+              onBlur={() => {
+                const val = countryCodeInput.trim() || null;
+                if (val !== (node.countryCode || '')) onUpdateNode(node.nodeId, { countryCode: val });
+              }}
+              sx={{ width: 140 }}
+              inputProps={{ 'aria-label': 'Country code for HR RLS' }}
+            />
+          )}
         </Box>
       </Box>
       {hasChildren && isExpanded && (
@@ -209,13 +234,15 @@ function NodeItem({ node, level, expandedNodes, onToggleExpand, headOfficeNodeId
 
 function CreateNodeModal({ nodes, headOfficeNodeId, onClose, onCreate, showToast }: {
   nodes: Node[]; headOfficeNodeId: string | null; onClose: () => void;
-  onCreate: (data: { nodeId: string; nodeDescription: string; isHeadOffice: boolean; isSchoolNode: boolean; parentNodeId: string | null }) => void;
+  onCreate: (data: { nodeId: string; nodeDescription: string; isHeadOffice: boolean; isSchoolNode: boolean; isCentralOffice?: boolean; countryCode?: string | null; parentNodeId: string | null }) => void;
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
 }) {
   const [nodeId, setNodeId] = useState('');
   const [nodeDescription, setNodeDescription] = useState('');
   const [isHeadOffice, setIsHeadOffice] = useState(false);
   const [isSchoolNode, setIsSchoolNode] = useState(false);
+  const [isCentralOffice, setIsCentralOffice] = useState(false);
+  const [countryCode, setCountryCode] = useState('');
   const [parentNodeId, setParentNodeId] = useState<string>('');
 
   const flattenNodes = (nodeList: Node[], result: Node[] = []): Node[] => {
@@ -234,7 +261,7 @@ function CreateNodeModal({ nodes, headOfficeNodeId, onClose, onCreate, showToast
       showToast(`Another node (${headOfficeNodeId}) is already set as Head Office.`, 'error');
       return;
     }
-    onCreate({ nodeId, nodeDescription, isHeadOffice, isSchoolNode, parentNodeId: parentNodeId || null });
+    onCreate({ nodeId, nodeDescription, isHeadOffice, isSchoolNode, isCentralOffice, countryCode: countryCode.trim() || null, parentNodeId: parentNodeId || null });
   };
 
   return (
@@ -262,6 +289,10 @@ function CreateNodeModal({ nodes, headOfficeNodeId, onClose, onCreate, showToast
           />
           {headOfficeNodeId && <Typography variant="caption" color="warning.main">Currently: {headOfficeNodeId}</Typography>}
           <FormControlLabel control={<Checkbox checked={isSchoolNode} onChange={(e) => setIsSchoolNode(e.target.checked)} />} label="Is School Node" />
+          <FormControlLabel control={<Checkbox checked={isCentralOffice} onChange={(e) => setIsCentralOffice(e.target.checked)} />} label="Is Central Office (Country)" />
+          {isCentralOffice && (
+            <TextField label="Country Code" value={countryCode} onChange={(e) => setCountryCode(e.target.value)} fullWidth placeholder="e.g., Kenya, India" helperText="Maps to Country in HR uploads for RLS" />
+          )}
           <FormControl fullWidth>
             <InputLabel>Parent Node (optional)</InputLabel>
             <Select value={parentNodeId} onChange={(e) => setParentNodeId(e.target.value)} label="Parent Node (optional)">

@@ -34,6 +34,8 @@ export interface Node {
   nodeDescription: string;
   isHeadOffice: boolean;
   isSchoolNode?: boolean;
+  isCentralOffice?: boolean;
+  countryCode?: string | null;
   parentNodeId?: string | null;
   children?: Node[];
 }
@@ -282,6 +284,8 @@ class AuthService {
     nodeDescription: string;
     isHeadOffice?: boolean;
     isSchoolNode?: boolean;
+    isCentralOffice?: boolean;
+    countryCode?: string | null;
     parentNodeId?: string | null;
   }): Promise<Node> {
     return apiClient.post<Node>('/api/nodes', data);
@@ -294,6 +298,8 @@ class AuthService {
     nodeDescription?: string;
     isHeadOffice?: boolean;
     isSchoolNode?: boolean;
+    isCentralOffice?: boolean;
+    countryCode?: string | null;
     parentNodeId?: string | null;
   }): Promise<Node> {
     return apiClient.put<Node>(`/api/nodes/${nodeId}`, data);
