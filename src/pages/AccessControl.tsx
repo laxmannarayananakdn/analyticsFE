@@ -146,7 +146,7 @@ export default function AccessControl() {
 
         {selectedUser && groups.length === 0 && reportGroups.length === 0 && (
           <Alert severity="info" sx={{ mb: 3 }}>
-            No Access Groups or Report Groups found. Create groups in <strong>Access Groups</strong> and <strong>Report Groups</strong> first, then assign them to users here.
+            No Access Groups or Report Groups found. Create groups in <Typography component="span" fontWeight="bold">Access Groups</Typography> and <Typography component="span" fontWeight="bold">Report Groups</Typography> first, then assign them to users here.
           </Alert>
         )}
         {selectedUser && (groups.length > 0 || reportGroups.length > 0) && (

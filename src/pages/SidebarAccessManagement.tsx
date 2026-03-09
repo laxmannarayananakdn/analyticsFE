@@ -4,6 +4,9 @@ import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import GroupIcon from '@mui/icons-material/Group';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -35,17 +38,17 @@ export default function SidebarAccessManagement() {
             <Typography variant="body1" paragraph>
               Sidebar visibility (pages and reports) is controlled by:
             </Typography>
-            <Box component="ul" sx={{ pl: 2.5, mb: 2 }}>
-              <li>
-                <strong>Access Groups</strong> — Define groups with node/department access and which admin pages they can see
-              </li>
-              <li>
-                <strong>Report Groups</strong> — Define which Superset reports/dashboards a group can see
-              </li>
-              <li>
-                <strong>Access Control</strong> — Assign users to User Groups and Report Groups (node access comes only from Access Groups)
-              </li>
-            </Box>
+            <List dense disablePadding sx={{ pl: 2.5, mb: 2, listStyle: 'disc' }}>
+              <ListItem disablePadding sx={{ display: 'list-item' }}>
+                <ListItemText primary={<><Typography component="span" fontWeight="bold">Access Groups</Typography> — Define groups with node/department access and which admin pages they can see</>} />
+              </ListItem>
+              <ListItem disablePadding sx={{ display: 'list-item' }}>
+                <ListItemText primary={<><Typography component="span" fontWeight="bold">Report Groups</Typography> — Define which Superset reports/dashboards a group can see</>} />
+              </ListItem>
+              <ListItem disablePadding sx={{ display: 'list-item' }}>
+                <ListItemText primary={<><Typography component="span" fontWeight="bold">Access Control</Typography> — Assign users to User Groups and Report Groups (node access comes only from Access Groups)</>} />
+              </ListItem>
+            </List>
             <Typography variant="body2" color="text.secondary" paragraph>
               Users get the union of pages from their User Groups and reports from their Report Groups. Report folders and reports flow from Report Groups alone.
             </Typography>

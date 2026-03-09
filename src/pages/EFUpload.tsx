@@ -15,6 +15,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import FormControl from '@mui/material/FormControl';
+import Input from '@mui/material/Input';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -241,13 +242,21 @@ export default function EFUpload() {
 
               {selectedFileType && fileTypeInfo && (
                 <Alert severity="info" sx={{ mb: 2 }} icon={<InfoIcon />}>
-                  Expected Format: {fileTypeInfo.description || 'See documentation'}. File extension: <strong>{expectedExtension}</strong>
+                  Expected Format: {fileTypeInfo.description || 'See documentation'}. File extension: <Typography component="span" fontWeight="bold">{expectedExtension}</Typography>
                 </Alert>
               )}
 
-              <Button variant="outlined" component="label" fullWidth sx={{ mb: 2 }} disabled={!selectedFileType || uploading}>
+              <Button variant="outlined" component="label" htmlFor="file-input" fullWidth sx={{ mb: 2 }} disabled={!selectedFileType || uploading}>
                 Select File
-                <input id="file-input" type="file" hidden accept={selectedFileType ? getFileAcceptAttribute(selectedFileType) : expectedExtension} onChange={handleFileSelect} />
+                <Input
+                  id="file-input"
+                  type="file"
+                  inputProps={{
+                    accept: selectedFileType ? getFileAcceptAttribute(selectedFileType) : expectedExtension,
+                    onChange: handleFileSelect,
+                  }}
+                  sx={{ display: 'none' }}
+                />
               </Button>
               {selectedFile && (
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

@@ -236,9 +236,9 @@ export default function SyncSchedules() {
             {schedulerInfo && (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 Scheduler: {schedulerInfo.enabled ? (
-                  <>Runs in <strong>{schedulerInfo.timezone}</strong></>
+                  <>Runs in <Typography component="span" fontWeight="bold">{schedulerInfo.timezone}</Typography></>
                 ) : (
-                  <strong>Disabled</strong>
+                  <Typography component="span" fontWeight="bold">Disabled</Typography>
                 )}
               </Typography>
             )}
@@ -254,6 +254,7 @@ export default function SyncSchedules() {
             {schedules.length === 0 ? (
               <Typography color="text.secondary">No schedules yet. Add one to run syncs on a schedule.</Typography>
             ) : (
+              <Box sx={{ overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -307,6 +308,7 @@ export default function SyncSchedules() {
                   );})}
                 </TableBody>
               </Table>
+              </Box>
             )}
           </CardContent>
         </Card>

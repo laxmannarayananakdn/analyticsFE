@@ -266,6 +266,7 @@ export default function MicrosoftTenantConfigPage() {
               <Typography color="text.secondary">No tenant configs. Add one to enable Microsoft login.</Typography>
             </Box>
           ) : (
+            <Box sx={{ overflowX: 'auto' }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -306,6 +307,7 @@ export default function MicrosoftTenantConfigPage() {
                 ))}
               </TableBody>
             </Table>
+            </Box>
           )}
         </Paper>
 

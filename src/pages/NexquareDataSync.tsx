@@ -407,7 +407,7 @@ export default function NexquareDataSync() {
                       <Box sx={{ p: 2, borderRadius: 1, bgcolor: result.success ? 'success.dark' : 'error.dark', color: 'white', mb: 2 }}>
                         <Typography fontWeight={600}>{result.message}</Typography>
                         {result.error && <Typography variant="body2" sx={{ mt: 1 }}>{result.error}</Typography>}
-                        {result.count !== undefined && <Typography variant="body2" sx={{ mt: 1 }}>Records fetched: <strong>{result.count}</strong></Typography>}
+                        {result.count !== undefined && <Typography variant="body2" sx={{ mt: 1 }}>Records fetched: <Typography component="span" fontWeight="bold">{result.count}</Typography></Typography>}
                       </Box>
                     </>
                   )}
@@ -415,7 +415,7 @@ export default function NexquareDataSync() {
                     <Box sx={{ mt: 2 }}>
                       <details>
                         <summary style={{ cursor: 'pointer', fontWeight: 500 }}>View Response Data</summary>
-                        <Box component="pre" sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1, overflow: 'auto', maxHeight: 400, fontSize: 12 }}>
+                        <Box component="pre" sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1, overflow: 'auto', maxHeight: 400, maxWidth: '100%', fontSize: 12 }}>
                           {JSON.stringify(result.data, null, 2)}
                         </Box>
                       </details>

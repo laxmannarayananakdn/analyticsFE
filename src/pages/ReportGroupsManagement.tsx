@@ -194,6 +194,7 @@ export default function ReportGroupsManagement() {
                 No report groups yet. Create a group and assign reports that users can access.
               </Typography>
             ) : (
+              <Box sx={{ overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -223,6 +224,7 @@ export default function ReportGroupsManagement() {
                   ))}
                 </TableBody>
               </Table>
+              </Box>
             )}
           </CardContent>
         </Card>

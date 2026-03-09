@@ -83,7 +83,7 @@ export default function DepartmentManagement() {
           <Box sx={{ mb: 2, p: 2, bgcolor: 'error.dark', color: 'white', borderRadius: 1 }}>{error}</Box>
         )}
 
-        <Paper sx={{ overflow: 'hidden' }}>
+        <Paper sx={{ overflow: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow>

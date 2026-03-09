@@ -198,6 +198,7 @@ export default function SyncHistory() {
             {runs.length === 0 ? (
               <Typography color="text.secondary">No sync runs found.</Typography>
             ) : (
+              <Box sx={{ overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -236,6 +237,7 @@ export default function SyncHistory() {
                   ))}
                 </TableBody>
               </Table>
+              </Box>
             )}
           </CardContent>
         </Card>

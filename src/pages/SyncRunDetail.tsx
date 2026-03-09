@@ -95,7 +95,7 @@ function SchoolEndpointsRow({ school }: { school: SyncRunSchool }) {
       <TableRow>
         <TableCell colSpan={7} sx={{ py: 0 }}>
           <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box sx={{ pl: 4, pr: 2, pb: 2 }}>
+            <Box sx={{ pl: 4, pr: 2, pb: 2, overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -306,6 +306,7 @@ export default function SyncRunDetail() {
                 {isComplete ? 'No school records.' : 'Schools will appear as sync progresses...'}
               </Typography>
             ) : (
+              <Box sx={{ overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -353,6 +354,7 @@ export default function SyncRunDetail() {
                   ))}
                 </TableBody>
               </Table>
+              </Box>
             )}
           </CardContent>
         </Card>
