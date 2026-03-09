@@ -52,6 +52,7 @@ export const NEX_ENDPOINTS_ORDER = [
 /** Canonical order for ManageBac endpoints */
 export const MB_ENDPOINTS_ORDER = [
   'school', 'academic-years', 'grades', 'subjects', 'teachers', 'year-groups', 'students', 'classes',
+  'memberships', 'term-grades',
 ];
 
 export interface SyncRunSchool {

@@ -37,9 +37,11 @@ const MB_ENDPOINTS: { id: string; label: string }[] = [
   { id: 'grades', label: 'Grades' },
   { id: 'subjects', label: 'Subjects' },
   { id: 'teachers', label: 'Teachers' },
+  { id: 'year-groups', label: 'Year Groups' },
   { id: 'students', label: 'Students' },
   { id: 'classes', label: 'Classes' },
-  { id: 'year-groups', label: 'Year Groups' },
+  { id: 'memberships', label: 'Class Memberships' },
+  { id: 'term-grades', label: 'Term Grades (Assessments)' },
 ];
 
 const NEX_ENDPOINTS: { id: string; label: string }[] = [
