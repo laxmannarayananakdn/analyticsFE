@@ -30,6 +30,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import InfoIcon from '@mui/icons-material/Info';
+import { authService } from '../services/AuthService';
 import { efService, FileType, Upload } from '../services/EFService';
 import UploadDetailsModal from '../components/UploadDetailsModal';
 
@@ -107,7 +108,9 @@ export default function EFUpload() {
       const progressInterval = setInterval(() => {
         setUploadProgress((prev) => (prev >= 90 ? (clearInterval(progressInterval), prev) : prev + 10));
       }, 200);
-      const result = await efService.uploadFile(selectedFile, selectedFileType);
+      const user = await authService.getCurrentUser().catch(() => null);
+      const uploadedBy = user?.email ?? 'Admin';
+      const result = await efService.uploadFile(selectedFile, selectedFileType, uploadedBy);
       clearInterval(progressInterval);
       setUploadProgress(100);
       showToast(`Successfully uploaded ${result.rowCount} records: ${result.message}`, 'success');
