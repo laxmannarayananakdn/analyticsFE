@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import EFUpload from './pages/EFUpload';
 import NexquareConfig from './pages/NexquareConfig';
 import ManageBacConfig from './pages/ManageBacConfig';
+import MBTermGradeConfig from './pages/MBTermGradeConfig';
 import NexquareDataSync from './pages/NexquareDataSync';
 import ManageBacDataSync from './pages/ManageBacDataSync';
 import RPConfig from './pages/RPConfig';
@@ -178,6 +179,16 @@ function AppContent() {
             <AccessProtectedRoute>
               <PageLayout>
                 <ManageBacConfig />
+              </PageLayout>
+            </AccessProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/mb-term-grade-config"
+          element={
+            <AccessProtectedRoute>
+              <PageLayout>
+                <MBTermGradeConfig />
               </PageLayout>
             </AccessProtectedRoute>
           }
