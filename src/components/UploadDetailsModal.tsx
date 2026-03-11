@@ -165,8 +165,8 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
     if (!fileType) return [];
     if (fileType.type_code === 'CEM_INITIAL') return ['Student_ID', 'Name', 'Class', 'Subject', 'Level', 'Test_Score', 'Test_Prediction_Grade'];
     if (fileType.type_code === 'CEM_FINAL') return ['Student_ID', 'Name', 'Subject_Title', 'Grade', 'Adaptive_Prediction', 'Adaptive_Residual'];
-    if (fileType.type_code === 'HR_EMPLOYEE_DATA') return ['Country', 'Entity', 'Emp_ID', 'Position_Category', 'Staff_Category', 'Gender'];
-    if (fileType.type_code === 'HR_BUDGET_VS_ACTUAL') return ['Country', 'Category', 'Budget', 'Actual', 'Key'];
+    if (fileType.type_code === 'HR_EMPLOYEE_DATA') return ['Country', 'Entity', 'Emp_ID', 'Position_Category', 'Staff_Category', 'Gender', 'Key'];
+    if (fileType.type_code === 'HR_BUDGET_VS_ACTUAL') return ['Country', 'Category', 'Budget', 'Key'];
     return [];
   };
 
@@ -207,8 +207,8 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
       }
       return allCols;
     }
-    if (fileType.type_code === 'HR_EMPLOYEE_DATA') return ['Year', 'Quarter', 'Month', 'Country', 'Country_City', 'Entity', 'Emp_ID', 'Position_Category', 'Attrition', 'FTE', 'Date_of_Birth', 'Date_of_Hire', 'Sect', 'Staff_Nationality', 'Gender', 'Teaching_Level', 'Teaching_Subject_Category', 'Qualification', 'Date_of_Separation', 'reason_for_leaving', 'Aging', 'Age_Grouping', 'Longevity', 'Longevity_Grouping', 'Reason_type', 'Reporting_Year', 'recruitment', 'separation', 'Staff_Category', 'Contract_type'];
-    if (fileType.type_code === 'HR_BUDGET_VS_ACTUAL') return ['Year', 'Quarter', 'Country', 'Category', 'Budget', 'Actual', 'Key'];
+    if (fileType.type_code === 'HR_EMPLOYEE_DATA') return ['Year', 'Quarter', 'Month', 'Country', 'Country_City', 'Entity', 'Emp_ID', 'Position_Category', 'Attrition', 'FTE', 'Date_of_Birth', 'Date_of_Hire', 'Sect', 'Staff_Nationality', 'Gender', 'Teaching_Level', 'Teaching_Subject_Category', 'Qualification', 'Date_of_Separation', 'reason_for_leaving', 'Aging', 'Age_Grouping', 'Longevity', 'Longevity_Grouping', 'Reason_type', 'Reporting_Year', 'recruitment', 'separation', 'Staff_Category', 'Contract_type', 'Key'];
+    if (fileType.type_code === 'HR_BUDGET_VS_ACTUAL') return ['Year', 'Quarter', 'Country', 'Category', 'Budget', 'Key'];
     return [];
   };
 
