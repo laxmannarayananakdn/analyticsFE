@@ -34,6 +34,8 @@ import { authService } from '../services/AuthService';
 import { efService, FileType, Upload } from '../services/EFService';
 import UploadDetailsModal from '../components/UploadDetailsModal';
 
+interface MBSchool { school_id: string; school_name: string }
+
 interface Toast { id: string; message: string; type: 'success' | 'error' | 'info'; }
 
 export default function EFUpload() {
@@ -50,8 +52,18 @@ export default function EFUpload() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(0);
+  const [mbSchools, setMbSchools] = useState<MBSchool[]>([]);
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string>('');
 
   useEffect(() => { loadFileTypes(); loadUploads(); }, []);
+  useEffect(() => {
+    if (selectedFileType === 'MSNAV_FINANCIAL_AID') {
+      efService.getMBSchools().then(setMbSchools).catch(() => setMbSchools([]));
+    } else {
+      setMbSchools([]);
+      setSelectedSchoolId('');
+    }
+  }, [selectedFileType]);
   useEffect(() => {
     const interval = setInterval(() => { if (!uploading) loadUploads(); }, 30000);
     return () => clearInterval(interval);
@@ -102,6 +114,10 @@ export default function EFUpload() {
 
   const handleUpload = async () => {
     if (!selectedFile || !selectedFileType) { showToast('Please select a file type and file', 'error'); return; }
+    if (selectedFileType === 'MSNAV_FINANCIAL_AID' && !selectedSchoolId) {
+      showToast('Please select a school for MSNAV Financial Aid uploads', 'error');
+      return;
+    }
     try {
       setUploading(true);
       setUploadProgress(0);
@@ -110,7 +126,13 @@ export default function EFUpload() {
       }, 200);
       const user = await authService.getCurrentUser().catch(() => null);
       const uploadedBy = user?.email ?? 'Admin';
-      const result = await efService.uploadFile(selectedFile, selectedFileType, uploadedBy);
+      const result = await efService.uploadFile(
+        selectedFile,
+        selectedFileType,
+        uploadedBy,
+        false,
+        selectedFileType === 'MSNAV_FINANCIAL_AID' ? selectedSchoolId : undefined
+      );
       clearInterval(progressInterval);
       setUploadProgress(100);
       showToast(`Successfully uploaded ${result.rowCount} records: ${result.message}`, 'success');
@@ -249,6 +271,28 @@ export default function EFUpload() {
                 </Alert>
               )}
 
+              {selectedFileType === 'MSNAV_FINANCIAL_AID' && (
+                <FormControl fullWidth required sx={{ mb: 2 }}>
+                  <InputLabel>School</InputLabel>
+                  <Select
+                    value={selectedSchoolId}
+                    onChange={(e) => setSelectedSchoolId(e.target.value)}
+                    label="School"
+                    disabled={uploading}
+                  >
+                    <MenuItem value="">Select school...</MenuItem>
+                    {mbSchools.map((s) => (
+                      <MenuItem key={s.school_id} value={s.school_id}>
+                        {s.school_name || s.school_id}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                    Required. RP schema will be updated for this school after upload.
+                  </Typography>
+                </FormControl>
+              )}
+
               <Button variant="outlined" component="label" htmlFor="file-input" fullWidth sx={{ mb: 2 }} disabled={!selectedFileType || uploading}>
                 Select File
                 <Input
@@ -277,7 +321,13 @@ export default function EFUpload() {
                 </Box>
               )}
 
-              <Button variant="contained" fullWidth onClick={handleUpload} disabled={!selectedFile || !selectedFileType || uploading} startIcon={uploading ? <RefreshIcon /> : <UploadFileIcon />}>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={handleUpload}
+                disabled={!selectedFile || !selectedFileType || uploading || (selectedFileType === 'MSNAV_FINANCIAL_AID' && !selectedSchoolId)}
+                startIcon={uploading ? <RefreshIcon /> : <UploadFileIcon />}
+              >
                 {uploading ? 'Uploading...' : 'Upload File'}
               </Button>
             </CardContent>

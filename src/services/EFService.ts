@@ -89,13 +89,24 @@ class EFService {
   }
 
   /**
+   * Get MB (ManageBac) schools for MSNAV Financial Aid upload dropdown.
+   * MSNAV is for MB schools only.
+   */
+  async getMBSchools(): Promise<Array<{ school_id: string; school_name: string }>> {
+    const response = await apiClient.get<{ schools: Array<{ school_id: string; school_name: string }> }>('/api/ef/mb-schools');
+    return response.schools || [];
+  }
+
+  /**
    * Upload a file
+   * @param schoolId Required for MSNAV_FINANCIAL_AID - used to trigger RP refresh for the school
    */
   async uploadFile(
     file: File,
     fileTypeCode: string,
     uploadedBy?: string,
-    skipInvalidRows: boolean = false
+    skipInvalidRows: boolean = false,
+    schoolId?: string | null
   ): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
@@ -104,6 +115,9 @@ class EFService {
       formData.append('uploadedBy', uploadedBy);
     }
     formData.append('skipInvalidRows', skipInvalidRows.toString());
+    if (schoolId) {
+      formData.append('schoolId', schoolId);
+    }
 
     try {
       const response = await axios.post<UploadResponse>(
@@ -191,13 +205,16 @@ class EFService {
   }
 
   /**
-   * Promote HR upload to RP schema (copy EF data to RP, full replace)
+   * Promote upload to RP schema. mode: replace (default) clears RP mart then loads this upload; append adds rows without clearing.
    */
-  async promoteToRP(uploadId: number): Promise<{ success: boolean; message: string; rowCount: number; fileType: string }> {
-    const response = await apiClient.post<{ success: boolean; message: string; rowCount: number; fileType: string }>(
-      `/api/ef/uploads/${uploadId}/promote-to-rp`
+  async promoteToRP(
+    uploadId: number,
+    mode: 'replace' | 'append' = 'replace'
+  ): Promise<{ success: boolean; message: string; rowCount: number; fileType: string; mode: 'replace' | 'append' }> {
+    return await apiClient.post<{ success: boolean; message: string; rowCount: number; fileType: string; mode: 'replace' | 'append' }>(
+      `/api/ef/uploads/${uploadId}/promote-to-rp`,
+      { mode }
     );
-    return response;
   }
 }
 

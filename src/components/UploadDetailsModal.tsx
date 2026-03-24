@@ -10,6 +10,10 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControl from '@mui/material/FormControl';
+import FormLabel from '@mui/material/FormLabel';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
 import Checkbox from '@mui/material/Checkbox';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -58,6 +62,8 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [promoting, setPromoting] = useState(false);
+  const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
+  const [promoteMode, setPromoteMode] = useState<'replace' | 'append'>('replace');
   const [showAllColumns, setShowAllColumns] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['student', 'grades']));
 
@@ -171,12 +177,28 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
   };
 
   const isHRUpload = fileType?.type_code === 'HR_EMPLOYEE_DATA' || fileType?.type_code === 'HR_BUDGET_VS_ACTUAL';
+  const canPromoteToRP =
+    !!fileType &&
+    [
+      'HR_EMPLOYEE_DATA',
+      'HR_BUDGET_VS_ACTUAL',
+      'IB_EXTERNAL_EXAMS',
+      'MSNAV_FINANCIAL_AID',
+      'CEM_INITIAL',
+      'CEM_FINAL'
+    ].includes(fileType.type_code);
 
-  const handlePromoteToRP = async () => {
+  const handleOpenPromoteDialog = () => {
+    setPromoteMode('replace');
+    setPromoteDialogOpen(true);
+  };
+
+  const handleConfirmPromoteToRP = async () => {
     try {
       setPromoting(true);
-      const result = await efService.promoteToRP(upload.id);
+      const result = await efService.promoteToRP(upload.id, promoteMode);
       showToast(result.message || `Promoted ${result.rowCount} records to RP schema`, 'success');
+      setPromoteDialogOpen(false);
       onRefresh?.();
     } catch (err: any) {
       showToast(err.response?.data?.message || err.message || 'Failed to promote to RP', 'error');
@@ -305,9 +327,9 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
               <Typography variant="subtitle1" fontWeight={600}>Data Preview</Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                {isHRUpload && (
-                  <Button variant="contained" color="primary" onClick={handlePromoteToRP} disabled={promoting} startIcon={promoting ? <CircularProgress size={16} /> : <PublishIcon />}>
-                    {promoting ? 'Promoting...' : 'Promote to RP'}
+                {canPromoteToRP && (
+                  <Button variant="contained" color="primary" onClick={handleOpenPromoteDialog} disabled={promoting} startIcon={<PublishIcon />}>
+                    Promote to RP
                   </Button>
                 )}
                 <Button variant="contained" color="success" onClick={handleExportCSV} disabled={exporting || data.length === 0} startIcon={exporting ? <CircularProgress size={16} /> : <DownloadIcon />}>
@@ -451,6 +473,59 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
         <DialogActions>
           <Button onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
           <Button variant="contained" color="error" onClick={() => { onDelete(upload.id); setShowDeleteConfirm(false); onClose(); }}>Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={promoteDialogOpen} onClose={() => !promoting && setPromoteDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Promote to RP schema</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Choose how to load this upload into the RP reporting table for this file type.
+          </Typography>
+          <FormControl component="fieldset" variant="standard" sx={{ width: '100%' }}>
+            <FormLabel component="legend">Load mode</FormLabel>
+            <RadioGroup
+              value={promoteMode}
+              onChange={(e) => setPromoteMode(e.target.value as 'replace' | 'append')}
+            >
+              <FormControlLabel
+                value="replace"
+                control={<Radio />}
+                label={
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>Replace (default)</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Clear the RP table for this type, then insert rows from this upload only.
+                    </Typography>
+                  </Box>
+                }
+              />
+              <FormControlLabel
+                value="append"
+                control={<Radio />}
+                label={
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>Append</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Add this upload&apos;s rows without removing existing RP data. Use to combine multiple years or files.
+                      Promoting the same upload again will duplicate rows.
+                    </Typography>
+                  </Box>
+                }
+              />
+            </RadioGroup>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPromoteDialogOpen(false)} disabled={promoting}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmPromoteToRP}
+            disabled={promoting}
+            startIcon={promoting ? <CircularProgress size={16} /> : <PublishIcon />}
+          >
+            {promoting ? 'Promoting...' : 'Promote'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Dialog>
