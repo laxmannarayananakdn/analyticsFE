@@ -12,6 +12,7 @@ import MBTermGradeConfig from './pages/MBTermGradeConfig';
 import NexquareDataSync from './pages/NexquareDataSync';
 import ManageBacDataSync from './pages/ManageBacDataSync';
 import RPConfig from './pages/RPConfig';
+import MarkGradeConfig from './pages/MarkGradeConfig';
 import Login from './pages/Login';
 import AuthCallback from './pages/AuthCallback';
 import ChangePassword from './pages/ChangePassword';
@@ -199,6 +200,16 @@ function AppContent() {
             <AccessProtectedRoute>
               <PageLayout>
                 <RPConfig />
+              </PageLayout>
+            </AccessProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/mark-grade-config"
+          element={
+            <AccessProtectedRoute>
+              <PageLayout>
+                <MarkGradeConfig />
               </PageLayout>
             </AccessProtectedRoute>
           }

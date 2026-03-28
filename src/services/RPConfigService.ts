@@ -46,6 +46,19 @@ export interface School {
   school_name: string;
 }
 
+export interface MarkGradeTranslationConfig {
+  id?: number;
+  node_id: string;
+  effective_date: string;
+  grade_name: string;
+  marks_start: number;
+  marks_end: number;
+  calculated_grade: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface RPConfigResponse<T> {
   success: boolean;
   count?: number;
@@ -177,6 +190,35 @@ class RPConfigService {
 
   async deleteTermFilter(id: number): Promise<void> {
     await apiClient.delete(`/api/rp-config/term-filters/${id}`);
+  }
+
+  async getMarkGradeTranslations(nodeId?: string, effectiveDate?: string, gradeName?: string): Promise<MarkGradeTranslationConfig[]> {
+    const params: Record<string, string> = {};
+    if (nodeId) params.node_id = nodeId;
+    if (effectiveDate) params.effective_date = effectiveDate;
+    if (gradeName) params.grade_name = gradeName;
+    const response = await apiClient.get<{ success: boolean; data: MarkGradeTranslationConfig[] }>('/api/rp-config/mark-grade-translations', params);
+    return response.data;
+  }
+
+  async saveMarkGradeTranslations(mappings: MarkGradeTranslationConfig[]): Promise<{ success: boolean; successCount: number; errorCount?: number; errors?: string[] }> {
+    return apiClient.post('/api/rp-config/mark-grade-translations', { mappings });
+  }
+
+  async deleteMarkGradeTranslation(id: number): Promise<void> {
+    await apiClient.delete(`/api/rp-config/mark-grade-translations/${id}`);
+  }
+
+  async getMarkGradeEffectiveDates(nodeId: string): Promise<string[]> {
+    const response = await apiClient.get<{ success: boolean; data: string[] }>('/api/rp-config/mark-grade-effective-dates', { node_id: nodeId });
+    return response.data;
+  }
+
+  async getMarkGradeNames(nodeId: string, effectiveDate?: string): Promise<string[]> {
+    const params: Record<string, string> = { node_id: nodeId };
+    if (effectiveDate) params.effective_date = effectiveDate;
+    const response = await apiClient.get<{ success: boolean; data: string[] }>('/api/rp-config/mark-grade-names', params);
+    return response.data;
   }
 }
 
