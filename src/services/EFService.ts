@@ -178,11 +178,16 @@ class EFService {
   async getUploadData(
     uploadId: number,
     page: number = 1,
-    limit: number = 100
+    limit: number = 100,
+    search?: string
   ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+    const params: Record<string, any> = { page, limit };
+    if (search && search.trim()) {
+      params.search = search.trim();
+    }
     return await apiClient.get<{ data: any[]; total: number; page: number; limit: number }>(
       `/api/ef/uploads/${uploadId}/data`,
-      { page, limit }
+      params
     );
   }
 

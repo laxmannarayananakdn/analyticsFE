@@ -57,6 +57,7 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
   const limit = 100;
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -69,13 +70,21 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
 
   const fileType = fileTypes.find((ft) => ft.id === upload.file_type_id);
 
-  useEffect(() => { loadData(); }, [upload.id, page]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => { loadData(); }, [upload.id, page, debouncedSearchTerm]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await efService.getUploadData(upload.id, page, limit);
+      const result = await efService.getUploadData(upload.id, page, limit, debouncedSearchTerm);
       setData(result.data);
       setTotal(result.total);
     } catch (err: any) {
@@ -88,10 +97,6 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
 
   const filteredAndSortedData = useMemo(() => {
     let result = [...data];
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter((row) => Object.values(row).some((value) => value != null && String(value).toLowerCase().includes(term)));
-    }
     if (sortColumn) {
       result.sort((a, b) => {
         const aVal = a[sortColumn];
@@ -103,7 +108,7 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
       });
     }
     return result;
-  }, [data, searchTerm, sortColumn, sortDirection]);
+  }, [data, sortColumn, sortDirection]);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -113,8 +118,20 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
   const handleExportCSV = async () => {
     try {
       setExporting(true);
-      const result = await efService.getUploadData(upload.id, 1, 10000);
-      const allData = result.data;
+      const exportLimit = 1000;
+      let exportPage = 1;
+      let totalRows = 0;
+      const allData: any[] = [];
+
+      do {
+        const result = await efService.getUploadData(upload.id, exportPage, exportLimit, debouncedSearchTerm);
+        if (exportPage === 1) {
+          totalRows = result.total;
+        }
+        allData.push(...result.data);
+        exportPage += 1;
+      } while (allData.length < totalRows);
+
       const headers = allData.length > 0 ? Object.keys(allData[0]) : [];
       const displayHeaders = headers.filter((h) => !['id', 'upload_id', 'file_name', 'uploaded_at', 'uploaded_by'].includes(h));
       const csvRows = [
@@ -261,7 +278,7 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
 
   const columns = getColumns();
   const totalPages = Math.ceil(total / limit);
-  const displayData = filteredAndSortedData.slice(0, limit);
+  const displayData = filteredAndSortedData;
 
   const renderDataTable = (cols: string[], getDisplayValue: (row: any, col: string) => any) => (
     <Table size="small">
