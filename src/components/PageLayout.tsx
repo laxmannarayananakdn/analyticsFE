@@ -153,6 +153,9 @@ export default function PageLayout({ children }: PageLayoutProps) {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh',
             transition: (theme) =>
               theme.transitions.create('width', {
                 easing: theme.transitions.easing.sharp,
@@ -185,132 +188,15 @@ export default function PageLayout({ children }: PageLayoutProps) {
             {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
           </IconButton>
         </Box>
-        <List sx={{ flex: 1, py: 1, px: 1 }}>
-          {/* Dashboard */}
-          {canSee('dashboard') && (
-            <ListItem disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                component={Link}
-                to="/dashboard"
-                selected={location.pathname === '/dashboard'}
-                sx={{
-                  borderRadius: 1,
-                  '&.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
-                    '&:hover': { bgcolor: 'primary.dark' },
-                    '& .MuiListItemIcon-root': { color: 'inherit' },
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: collapsed ? 0 : 56, color: 'inherit' }}>
-                  <DashboardIcon />
-                </ListItemIcon>
-                {!collapsed && <ListItemText primary="Dashboard" primaryTypographyProps={{ noWrap: true }} />}
-              </ListItemButton>
-            </ListItem>
-          )}
-
-          {/* Report folders: Education, Finance, HR, Operations */}
-          {!collapsed &&
-            DASHBOARD_FOLDERS.map((folder) => {
-              const allItems = dashboardsByFolder[folder] || [];
-              const items = allItems.filter((d) => canSee(`report:${d.uuid}`));
-              if (items.length === 0) return null;
-              const isExpanded = expandedFolders[folder] ?? true;
-              return (
-                <Box key={folder}>
-                  <ListItem disablePadding sx={{ mb: 0.5 }}>
-                    <ListItemButton
-                      onClick={() => toggleFolder(folder)}
-                      sx={{ borderRadius: 1 }}
-                      disabled={items.length === 0}
-                    >
-                      <ListItemIcon sx={{ minWidth: 56, color: 'inherit' }}>
-                        {FOLDER_ICONS[folder] || <FolderIcon />}
-                      </ListItemIcon>
-                      <ListItemText primary={folder} primaryTypographyProps={{ noWrap: true }} />
-                      {items.length > 0 && (isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
-                    </ListItemButton>
-                  </ListItem>
-                  <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                    <List component="div" disablePadding sx={{ pl: 2 }}>
-                      {items.map((d) => {
-                        const to = `/superset-dashboard/${d.uuid}`;
-                        const isActive = location.pathname === to;
-                        return (
-                          <ListItem key={d.uuid} disablePadding sx={{ mb: 0.5 }}>
-                            <ListItemButton
-                              component={Link}
-                              to={to}
-                              selected={isActive}
-                              sx={{
-                                borderRadius: 1,
-                                '&.Mui-selected': {
-                                  bgcolor: 'primary.main',
-                                  color: 'primary.contrastText',
-                                  '&:hover': { bgcolor: 'primary.dark' },
-                                  '& .MuiListItemIcon-root': { color: 'inherit' },
-                                },
-                              }}
-                            >
-                              <ListItemIcon sx={{ minWidth: 40 }}>{<AssessmentIcon />}</ListItemIcon>
-                              <ListItemText primary={d.name} primaryTypographyProps={{ noWrap: true }} />
-                            </ListItemButton>
-                          </ListItem>
-                        );
-                      })}
-                    </List>
-                  </Collapse>
-                </Box>
-              );
-            })}
-
-          {collapsed && (
-            <>
-              {DASHBOARD_FOLDERS.map((folder) => {
-                const allItems = dashboardsByFolder[folder] || [];
-                const items = allItems.filter((d) => canSee(`report:${d.uuid}`));
-                if (items.length === 0) return null;
-                const first = items[0];
-                return (
-                  <ListItem key={folder} disablePadding sx={{ mb: 0.5 }}>
-                    <ListItemButton
-                      component={Link}
-                      to={first ? `/superset-dashboard/${first.uuid}` : '#'}
-                      selected={first && location.pathname === `/superset-dashboard/${first.uuid}`}
-                      disabled={items.length === 0}
-                      sx={{
-                        borderRadius: 1,
-                        '&.Mui-selected': {
-                          bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                          '&:hover': { bgcolor: 'primary.dark' },
-                          '& .MuiListItemIcon-root': { color: 'inherit' },
-                        },
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 0, color: 'inherit' }}>
-                        {FOLDER_ICONS[folder] || <FolderIcon />}
-                      </ListItemIcon>
-                    </ListItemButton>
-                  </ListItem>
-                );
-              })}
-            </>
-          )}
-
-          <Divider sx={{ my: 1 }} />
-
-          {/* Admin items */}
-          {adminNavItems.filter((item) => canSee(item.itemId)).map((item) => {
-            const isActive = location.pathname === item.to;
-            return (
-              <ListItem key={item.to} disablePadding sx={{ mb: 0.5 }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', py: 1, px: 1 }}>
+          <List sx={{ py: 0 }}>
+            {/* Dashboard */}
+            {canSee('dashboard') && (
+              <ListItem disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   component={Link}
-                  to={item.to}
-                  selected={isActive}
+                  to="/dashboard"
+                  selected={location.pathname === '/dashboard'}
                   sx={{
                     borderRadius: 1,
                     '&.Mui-selected': {
@@ -322,47 +208,160 @@ export default function PageLayout({ children }: PageLayoutProps) {
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: collapsed ? 0 : 56, color: 'inherit' }}>
-                    {item.icon}
+                    <DashboardIcon />
                   </ListItemIcon>
-                  {!collapsed && <ListItemText primary={item.label} primaryTypographyProps={{ noWrap: true }} />}
+                  {!collapsed && <ListItemText primary="Dashboard" primaryTypographyProps={{ noWrap: true }} />}
                 </ListItemButton>
               </ListItem>
-            );
-          })}
-        </List>
-        <Divider />
-        {!collapsed && user && (
-          <Box
-            sx={{
-              px: 2,
-              py: 2,
-              borderBottom: 1,
-              borderColor: 'divider',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-              <PersonIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-              <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Typography variant="subtitle2" fontWeight={600} noWrap>
-                  {user.displayName || 'User'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" noWrap display="block">
-                  {user.email}
-                </Typography>
+            )}
+
+            {/* Report folders: Education, Finance, HR, Operations */}
+            {!collapsed &&
+              DASHBOARD_FOLDERS.map((folder) => {
+                const allItems = dashboardsByFolder[folder] || [];
+                const items = allItems.filter((d) => canSee(`report:${d.uuid}`));
+                if (items.length === 0) return null;
+                const isExpanded = expandedFolders[folder] ?? true;
+                return (
+                  <Box key={folder}>
+                    <ListItem disablePadding sx={{ mb: 0.5 }}>
+                      <ListItemButton
+                        onClick={() => toggleFolder(folder)}
+                        sx={{ borderRadius: 1 }}
+                        disabled={items.length === 0}
+                      >
+                        <ListItemIcon sx={{ minWidth: 56, color: 'inherit' }}>
+                          {FOLDER_ICONS[folder] || <FolderIcon />}
+                        </ListItemIcon>
+                        <ListItemText primary={folder} primaryTypographyProps={{ noWrap: true }} />
+                        {items.length > 0 && (isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+                      </ListItemButton>
+                    </ListItem>
+                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                      <List component="div" disablePadding sx={{ pl: 2 }}>
+                        {items.map((d) => {
+                          const to = `/superset-dashboard/${d.uuid}`;
+                          const isActive = location.pathname === to;
+                          return (
+                            <ListItem key={d.uuid} disablePadding sx={{ mb: 0.5 }}>
+                              <ListItemButton
+                                component={Link}
+                                to={to}
+                                selected={isActive}
+                                sx={{
+                                  borderRadius: 1,
+                                  '&.Mui-selected': {
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    '&:hover': { bgcolor: 'primary.dark' },
+                                    '& .MuiListItemIcon-root': { color: 'inherit' },
+                                  },
+                                }}
+                              >
+                                <ListItemIcon sx={{ minWidth: 40 }}>{<AssessmentIcon />}</ListItemIcon>
+                                <ListItemText primary={d.name} primaryTypographyProps={{ noWrap: true }} />
+                              </ListItemButton>
+                            </ListItem>
+                          );
+                        })}
+                      </List>
+                    </Collapse>
+                  </Box>
+                );
+              })}
+
+            {collapsed && (
+              <>
+                {DASHBOARD_FOLDERS.map((folder) => {
+                  const allItems = dashboardsByFolder[folder] || [];
+                  const items = allItems.filter((d) => canSee(`report:${d.uuid}`));
+                  if (items.length === 0) return null;
+                  const first = items[0];
+                  return (
+                    <ListItem key={folder} disablePadding sx={{ mb: 0.5 }}>
+                      <ListItemButton
+                        component={Link}
+                        to={first ? `/superset-dashboard/${first.uuid}` : '#'}
+                        selected={first && location.pathname === `/superset-dashboard/${first.uuid}`}
+                        disabled={items.length === 0}
+                        sx={{
+                          borderRadius: 1,
+                          '&.Mui-selected': {
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            '&:hover': { bgcolor: 'primary.dark' },
+                            '& .MuiListItemIcon-root': { color: 'inherit' },
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 0, color: 'inherit' }}>
+                          {FOLDER_ICONS[folder] || <FolderIcon />}
+                        </ListItemIcon>
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </>
+            )}
+
+            <Divider sx={{ my: 1 }} />
+
+            {/* Admin items */}
+            {adminNavItems.filter((item) => canSee(item.itemId)).map((item) => {
+              const isActive = location.pathname === item.to;
+              return (
+                <ListItem key={item.to} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    component={Link}
+                    to={item.to}
+                    selected={isActive}
+                    sx={{
+                      borderRadius: 1,
+                      '&.Mui-selected': {
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        '&:hover': { bgcolor: 'primary.dark' },
+                        '& .MuiListItemIcon-root': { color: 'inherit' },
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: collapsed ? 0 : 56, color: 'inherit' }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    {!collapsed && <ListItemText primary={item.label} primaryTypographyProps={{ noWrap: true }} />}
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+          </List>
+        </Box>
+        <Box sx={{ borderTop: 1, borderColor: 'divider', py: 1, px: 1, flexShrink: 0 }}>
+          {!collapsed && user && (
+            <Box sx={{ px: 1, py: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <PersonIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={600} noWrap>
+                    {user.displayName || 'User'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap display="block">
+                    {user.email}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
-          </Box>
-        )}
-        <List sx={{ py: 1, px: 1 }}>
-          <ListItem disablePadding>
-            <ListItemButton onClick={handleLogout} sx={{ borderRadius: 1 }} aria-label="Logout">
-              <ListItemIcon sx={{ minWidth: collapsed ? 0 : 56 }}>
-                <LogoutIcon />
-              </ListItemIcon>
-              {!collapsed && <ListItemText primary="Logout" />}
-            </ListItemButton>
-          </ListItem>
-        </List>
+          )}
+          <List sx={{ py: 0 }}>
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleLogout} sx={{ borderRadius: 1 }} aria-label="Logout">
+                <ListItemIcon sx={{ minWidth: collapsed ? 0 : 56 }}>
+                  <LogoutIcon />
+                </ListItemIcon>
+                {!collapsed && <ListItemText primary="Logout" />}
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Box>
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto' }}>
         {children}

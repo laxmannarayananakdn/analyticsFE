@@ -114,7 +114,7 @@ export default function SupersetDashboard() {
     <Box>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" fontWeight="bold">
-          Superset Dashboard
+          AKS Dashboards
         </Typography>
       </Box>
 
