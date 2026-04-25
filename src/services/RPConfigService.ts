@@ -28,6 +28,7 @@ export interface AssessmentComponentConfig {
 export interface ComponentFilter {
   id?: number;
   school_id: string;
+  academic_year?: string;
   filter_type: 'include' | 'exclude';
   pattern: string;
   display_order?: number;
@@ -166,8 +167,11 @@ class RPConfigService {
     await apiClient.delete<{ success: boolean; message: string }>(`/api/rp-config/assessment-component-config/${id}`);
   }
 
-  async getComponentFilters(schoolId: string): Promise<ComponentFilter[]> {
-    const response = await apiClient.get<{ success: boolean; data: ComponentFilter[] }>('/api/rp-config/component-filters', { school_id: schoolId });
+  async getComponentFilters(schoolId: string, academicYear: string): Promise<ComponentFilter[]> {
+    const response = await apiClient.get<{ success: boolean; data: ComponentFilter[] }>('/api/rp-config/component-filters', {
+      school_id: schoolId,
+      academic_year: academicYear,
+    });
     return response.data;
   }
 

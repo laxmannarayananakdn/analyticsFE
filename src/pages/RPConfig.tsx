@@ -194,7 +194,11 @@ export default function RPConfig() {
   const loadComponentFilters = async () => {
     try {
       setLoading(true);
-      const data = await rpConfigService.getComponentFilters(selectedSchoolId);
+      if (!selectedAcademicYear || selectedAcademicYear === ADD_NEW_AY) {
+        setEditableCompFilters([]);
+        return;
+      }
+      const data = await rpConfigService.getComponentFilters(selectedSchoolId, selectedAcademicYear);
       setEditableCompFilters([...data]);
     } catch (error: any) {
       showToast('Failed to load component filters', 'error');
@@ -244,9 +248,14 @@ export default function RPConfig() {
   const handleSaveComponentFilters = async () => {
     try {
       setLoading(true);
+      if (!selectedAcademicYear || selectedAcademicYear === ADD_NEW_AY) {
+        showToast('Please select academic year first', 'error');
+        return;
+      }
       const filters = editableCompFilters.map((f) => ({
         ...f,
         school_id: selectedSchoolId,
+        academic_year: selectedAcademicYear,
       }));
       const response = await rpConfigService.saveComponentFilters(filters);
       if (response.success) {
@@ -303,13 +312,13 @@ export default function RPConfig() {
   };
 
   const handleAddComponentFilter = () => {
-    if (!selectedSchoolId) {
-      showToast('Please select school first', 'error');
+    if (!selectedSchoolId || !selectedAcademicYear || selectedAcademicYear === ADD_NEW_AY) {
+      showToast('Please select school and academic year first', 'error');
       return;
     }
     setEditableCompFilters([
       ...editableCompFilters,
-      { school_id: selectedSchoolId, filter_type: 'include', pattern: '' },
+      { school_id: selectedSchoolId, academic_year: selectedAcademicYear, filter_type: 'include', pattern: '' },
     ]);
   };
 
@@ -453,7 +462,7 @@ export default function RPConfig() {
   if (selectedSchoolId && selectedAcademicYear) gradeOptions.push(ADD_NEW_GRADE);
 
   const subjectTabReady = selectedSchoolId && selectedAcademicYear && selectedGrade;
-  const assessmentTabReady = selectedSchoolId;
+  const assessmentTabReady = selectedSchoolId && selectedAcademicYear && selectedAcademicYear !== ADD_NEW_AY;
   const termTabReady = selectedSchoolId;
 
   return (
