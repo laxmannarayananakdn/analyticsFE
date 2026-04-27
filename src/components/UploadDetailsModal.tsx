@@ -184,6 +184,20 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
     tda: { label: 'TDA Test Metrics', columns: ['TDA_Score', 'TDA_Prediction', 'TDA_Residual', 'TDA_Standardised_Residual', 'TDA_Gender_Adj_Prediction', 'TDA_Gender_Adj_Residual', 'TDA_Gender_Adj_Std_Residual'] },
   });
 
+  const financeDictionaryFileTypes = new Set([
+    'FIN_DIC_ACCOUNT',
+    'FIN_DIC_ACTIVITY',
+    'FIN_DIC_DEPARTMENT',
+    'FIN_DIC_FIXED_ASSETS',
+    'FIN_DIC_OPERATING_UNIT',
+    'FIN_DIC_PARTY',
+    'FIN_DIC_PROJECT',
+    'FIN_DIC_REFERENCE',
+    'FIN_DIC_REGION',
+    'FIN_DIC_RESOURCE',
+    'FIN_DIC_SOURCE_OF_FUND'
+  ]);
+
   const getKeyColumns = (): string[] => {
     if (!fileType) return [];
     if (fileType.type_code === 'CEM_INITIAL') return ['Student_ID', 'Name', 'Class', 'Subject', 'Level', 'Test_Score', 'Test_Prediction_Grade'];
@@ -248,6 +262,39 @@ export default function UploadDetailsModal({ upload, fileTypes, onClose, onDelet
     }
     if (fileType.type_code === 'HR_EMPLOYEE_DATA') return ['Year', 'Quarter', 'Month', 'Country', 'Country_City', 'Entity', 'Emp_ID', 'Position_Category', 'Attrition', 'FTE', 'Date_of_Birth', 'Date_of_Hire', 'Sect', 'Staff_Nationality', 'Gender', 'Teaching_Level', 'Teaching_Subject_Category', 'Qualification', 'Date_of_Separation', 'reason_for_leaving', 'Aging', 'Age_Grouping', 'Longevity', 'Longevity_Grouping', 'Reason_type', 'Reporting_Year', 'recruitment', 'separation', 'Staff_Category', 'Contract_type', 'Key'];
     if (fileType.type_code === 'HR_BUDGET_VS_ACTUAL') return ['Year', 'Quarter', 'Country', 'Category', 'Budget', 'Key'];
+    if (financeDictionaryFileTypes.has(fileType.type_code)) {
+      return [
+        'dictionary_type',
+        'code',
+        'description',
+        'suspended',
+        'entity',
+        'group_dimension',
+        'last_updated_by',
+        'last_updated_at'
+      ];
+    }
+    if (fileType.type_code === 'FIN_TB_ACTUAL' || fileType.type_code === 'FIN_TB_BUDGET') {
+      return [
+        'tb_type',
+        'main_account',
+        'funding_source',
+        'region',
+        'operating_unit',
+        'department',
+        'project',
+        'activity',
+        'resource',
+        'party',
+        'fixed_assets',
+        'reference',
+        'debit',
+        'credit',
+        'status',
+        'last_updated_by',
+        'last_updated_at'
+      ];
+    }
     return [];
   };
 
